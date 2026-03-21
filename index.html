@@ -337,7 +337,44 @@ function saveS(){localStorage.setItem(SK,JSON.stringify(settings))}
 recs=loadR();settings=loadS();
 function detectPhase(){const t=todayS(),y=yesterdayS(),tR=recs.find(r=>r.date===t),yR=recs.find(r=>r.date===y);if(tR?.wakeup)return"wake-done";const bed=tR?.bedtime?tR:(yR?.bedtime?yR:null);if(!bed?.bedtime)return"bed";const now=new Date(),[wh,wm]=settings.wakeTarget.split(":").map(Number),wt=new Date(now);wt.setHours(wh,wm,0,0);const h=now.getHours();if(h>=0&&h<wh+1)return now<wt?"night":"wake";if(h>=17)return"night";return"wake"}
 let phase=detectPhase(),view="gate";const V=$("#view");
-function setBg(p){const b={bed:"linear-gradient(135deg,#0a0e18,#141e30)",night:"linear-gradient(180deg,#060810,#0c1018,#10162a)",wake:"linear-gradient(180deg,#060810,#0c1018,#10162a)","wake-done":"linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",history:"linear-gradient(180deg,#0a0e14,#12182a)",settings:"linear-gradient(180deg,#0a0e14,#12182a)"};document.body.style.background=b[p]||b.bed}
+function setBg(p) {
+  const b = {
+    bed: "linear-gradient(135deg,#0a0e18,#141e30)",
+    night: "linear-gradient(180deg,#060810,#0c1018,#10162a)",
+    wake: "linear-gradient(180deg,#060810,#0c1018,#10162a)",
+    "wake-done": "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+    history: "linear-gradient(180deg,#0a0e14,#12182a)",
+    settings: "linear-gradient(180deg,#0a0e14,#12182a)"
+  };
+
+  // 各フェーズのグラデーションの「開始色（一番上の色）」を定義
+  const topColors = {
+    bed: "#0a0e18",
+    night: "#060810",
+    wake: "#060810",
+    "wake-done": "#1a1a2e",
+    history: "#0a0e14",
+    settings: "#0a0e14"
+  };
+
+  const currentBg = b[p] || b.bed;
+  const currentTop = topColors[p] || topColors.bed;
+
+  // 1. bodyの背景を更新
+  document.body.style.background = currentBg;
+
+  // 2. html（セーフエリアの背後）の色を更新
+  document.documentElement.style.backgroundColor = currentTop;
+
+  // 3. ブラウザのステータスバーの色を更新
+  let meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.content = currentTop;
+}
 
 function switchView(v){view=v;document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));$(v==="gate"?"#tabGate":v==="history"?"#tabHistory":"#tabSettings").classList.add("on");render()}
 
