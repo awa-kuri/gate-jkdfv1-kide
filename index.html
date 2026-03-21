@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>関門 — Gate</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -24,9 +24,9 @@ transition:background 2s ease;overflow-x:hidden}
 
 .app{display:flex;flex-direction:column;min-height:100vh;position:relative}
 
-.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;padding-top:calc(16px + env(safe-area-inset-top,0px));position:relative;z-index:2}
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;padding-top:calc(16px + env(safe-area-inset-top,0px));margin-inline: auto; width: 100%;position:relative;z-index:2}
 
-.hdr-title{font-family:var(--fd);font-size:15px;font-weight:600;color:#5a6272;letter-spacing:.08em}
+.hdr-title{font-family:var(--fd);font-size:15px;font-weight:600;color:#5a6272;letter-spacing:1.08em}
 .hdr-phase{font-family:var(--fd);font-size:15px;color:#3a4555;letter-spacing:.06em}
 .tabs{display:flex;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.05);position:relative;z-index:2}
 .tab{padding:10px 16px;font-size:13px;color:#3a4555;background:none;border:none;border-bottom:1.5px solid transparent;cursor:pointer;font-family:var(--fb)}
@@ -36,7 +36,7 @@ transition:background 2s ease;overflow-x:hidden}
 /* 1. 配置の安定化：centeredでも上下の余白を固定する */
 .main.centered {
   justify-content: flex-start; /* centerから変更。上からの位置を固定するため */
-  padding-top: 60px; /* 画面中央付近に見えるよう調整。好みの高さでOK */
+  padding-top: 20px; /* 画面中央付近に見えるよう調整。好みの高さでOK */
 }
 
 .main.top{justify-content:flex-start;padding-top:20px}
@@ -112,9 +112,11 @@ transition:background 2s ease;overflow-x:hidden}
 .hold-ring circle.track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:3}
 .hold-ring circle.fill{fill:none;stroke:#7aaa6a;stroke-width:3;stroke-linecap:round}
 .hold-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fd);color:#7aaa6a;letter-spacing:.08em;cursor:pointer;-webkit-user-select:none;user-select:none}
-.hold-label{font-size:16px}.hold-sub{font-size:11px;color:#5a6a5a;margin-top:4px}
+.hold-label{font-size:16px}.hold-sub{font-size:11px;color:#5a6a5a;margin-top:4px;}
+
 .sunrise-bg{position:fixed;inset:0;z-index:0;pointer-events:none;transition:background .3s ease}
-.sleep-info{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+
+.sleep-info{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;}
 .stat{text-align:center;padding:4px 0}.stat-v{font-family:var(--fd);font-size:20px;color:#d0d5dc}.stat-l{font-size:11px;color:#4a5568;margin-top:2px}
 .task-lbl{font-family:var(--fd);font-size:13px;color:#7a7060;text-align:center}
 .task-val{font-family:var(--fd);font-size:14px;color:#c0b070;text-align:center;margin-top:4px}
@@ -154,6 +156,16 @@ transition:background 2s ease;overflow-x:hidden}
 @keyframes textFloat{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 @keyframes floatUp{0%{opacity:0;transform:translateY(0)}15%{opacity:.6}85%{opacity:.4}100%{opacity:0;transform:translateY(calc(-100vh - 40px))}}
+
+/* フェードイン */
+.view-fade {
+  animation: viewFadeIn 0.4s ease-out forwards;
+}
+
+@keyframes viewFadeIn {
+  from { opacity: 0;}
+  to { opacity: 1;}
+}
 
 
 /* 4. 入力エリアのガタつき防止（renderBed用） */
@@ -251,7 +263,24 @@ const PNAME={bed:"夜 ─ 就寝",night:"夜更け",wake:"朝 ─ 起床","wake-
 
 DEFS={wakeTarget:"05:00",thresholds:{early:"23:00",normal:"23:30",late:"00:00"}};
 const $=s=>document.querySelector(s),pick=a=>a[Math.floor(Math.random()*a.length)],pad=n=>String(n).padStart(2,"0");
-const todayS=()=>new Date().toISOString().slice(0,10),yesterdayS=()=>new Date(Date.now()-864e5).toISOString().slice(0,10);
+
+// 起床目標の1時間前を日付の切り替わり目にする
+const getBoundary = () => {
+  const [wh] = settings.wakeTarget.split(":").map(Number);
+  // 目標が5時なら4時、4時なら3時を境界にする（最低でも深夜0時は確保）
+  return Math.max(0, wh - 1); 
+};
+
+const todayS = () => {
+  const d = new Date(Date.now() - getBoundary() * 36e5);
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+};
+
+const yesterdayS = () => {
+  const d = new Date(Date.now() - (24 + getBoundary()) * 36e5);
+  return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+};
+
 const hm=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())};
 const fmtT=i=>{if(!i)return"--:--";const d=new Date(i);return pad(d.getHours())+":"+pad(d.getMinutes())};
 const diffM=(a,b)=>{if(!a||!b)return null;return Math.round((new Date(b)-new Date(a))/6e4)};
@@ -271,11 +300,37 @@ function saveS(){localStorage.setItem(SK,JSON.stringify(settings))}
 recs=loadR();settings=loadS();
 function detectPhase(){const t=todayS(),y=yesterdayS(),tR=recs.find(r=>r.date===t),yR=recs.find(r=>r.date===y);if(tR?.wakeup)return"wake-done";const bed=tR?.bedtime?tR:(yR?.bedtime?yR:null);if(!bed?.bedtime)return"bed";const now=new Date(),[wh,wm]=settings.wakeTarget.split(":").map(Number),wt=new Date(now);wt.setHours(wh,wm,0,0);const h=now.getHours();if(h>=0&&h<wh+1)return now<wt?"night":"wake";if(h>=17)return"night";return"wake"}
 let phase=detectPhase(),view="gate";const V=$("#view");
-function setBg(p){const b={bed:"linear-gradient(135deg,#0a0e18,#141e30)",night:"linear-gradient(180deg,#060810,#0c1018,#10162a)",wake:"linear-gradient(135deg,#12161e,#1a1810)","wake-done":"linear-gradient(135deg,#12161e,#1a1810)",history:"linear-gradient(180deg,#0a0e14,#12182a)",settings:"linear-gradient(180deg,#0a0e14,#12182a)"};document.body.style.background=b[p]||b.bed}
+function setBg(p){const b={bed:"linear-gradient(135deg,#0a0e18,#141e30)",night:"linear-gradient(180deg,#060810,#0c1018,#10162a)",wake:"linear-gradient(180deg,#060810,#0c1018,#10162a)","wake-done":"linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",history:"linear-gradient(180deg,#0a0e14,#12182a)",settings:"linear-gradient(180deg,#0a0e14,#12182a)"};document.body.style.background=b[p]||b.bed}
 
 function switchView(v){view=v;document.querySelectorAll(".tab").forEach(t=>t.classList.remove("on"));$(v==="gate"?"#tabGate":v==="history"?"#tabHistory":"#tabSettings").classList.add("on");render()}
 
-function render(){document.querySelectorAll(".stars,.light-particles,.sunrise-bg").forEach(e=>e.remove());const p=view==="gate"?phase:view;setBg(p);$("#phaseLabel").textContent=view==="gate"?(PNAME[phase]||""):"";V.className="main "+(view==="gate"?"centered":"top");if(view==="gate"){if(phase==="bed")renderBed();else if(phase==="night")renderNight();else if(phase==="wake")renderWake();else renderWakeDone()}else if(view==="history")renderHistory();else renderSettings()}
+function render() {
+  // 既存の背景削除
+  document.querySelectorAll(".stars,.light-particles,.sunrise-bg").forEach(e => e.remove());
+  
+  const p = view === "gate" ? phase : view;
+  setBg(p);
+  
+  $("#phaseLabel").textContent = view === "gate" ? (PNAME[phase] || "") : "";
+  V.className = "main " + (view === "gate" ? "centered" : "top");
+
+  // --- フェードイン演出の追加 ---
+  V.classList.remove("view-fade");
+  void V.offsetWidth; // 強制的に再描画させてアニメーションをリセットする呪文
+  V.classList.add("view-fade");
+  // ---------------------------
+
+  if (view === "gate") {
+    if (phase === "bed") renderBed();
+    else if (phase === "night") renderNight();
+    else if (phase === "wake") renderWake();
+    else renderWakeDone();
+  } else if (view === "history") {
+    renderHistory();
+  } else {
+    renderSettings();
+  }
+}
 
 function makeStars(n = 35) {
   const d = document.createElement("div");
@@ -317,7 +372,7 @@ $("#sleepBtn").onclick=doSleep}
 function doSleep(){if(!selTask)return;const tl=TASKS.find(t=>t.id===selTask)?.label||"",ft=selTask==="other"&&$("#otherInput")?tl+"："+($("#otherInput").value.trim()||""):tl;
 const ol=document.createElement("div");ol.className="overlay";ol.style.background="rgba(4,6,10,0.96)";
 ol.innerHTML='<div class="ov-text d1" style="font-family:var(--fd);font-size:22px;color:#8a9aaa;letter-spacing:.2em">眠りの刻</div><div class="ov-text d2" style="font-family:var(--fd);font-size:13px;color:#3a4a5a;font-weight:600;letter-spacing:.08em">'+settings.wakeTarget+' に、また会おう。…おやすみ。</div>';
-document.body.appendChild(ol);setTimeout(()=>{const now=new Date().toISOString(),td=todayS(),ex=recs.find(r=>r.date===td);if(ex){ex.bedtime=now;ex.task=ft;ex.taskId=selTask}else recs.push({date:td,bedtime:now,wakeup:null,task:ft,taskId:selTask});saveR();phase=detectPhase();ol.remove();render()},10000)}
+document.body.appendChild(ol);setTimeout(()=>{const now=new Date().toISOString(),td=todayS(),ex=recs.find(r=>r.date===td);if(ex){ex.bedtime=now;ex.task=ft;ex.taskId=selTask}else recs.push({date:td,bedtime:now,wakeup:null,task:ft,taskId:selTask});saveR();phase=detectPhase();ol.remove();render()},8000)}
 
 /* ══ NIGHT ══ */
 function renderNight() {
@@ -396,7 +451,7 @@ V.innerHTML = `
 
 /* ══ WAKE (3-step) ══ */
 function getBedRec(){const td=todayS(),yd=yesterdayS();let r=recs.find(x=>x.date===td);if(!r?.bedtime)r=recs.find(x=>x.date===yd);return r}
-function renderWake(){makeLights();const bedRec=getBedRec();const correctId=bedRec?.taskId||null;
+function renderWake(){const bedRec=getBedRec();const correctId=bedRec?.taskId||null;
 V.innerHTML='<div class="card" style="background:rgba(255,255,255,.04)"><div class="clock" id="clk" style="font-size:36px">'+hm()+'</div><div class="accent"></div><div class="msg" id="wMsg">目が覚めたか。──昨夜決めたことを思い出せ。</div><div class="sub" id="wSub">今朝やることを選べ。</div></div><div class="chip-row" id="wQuiz"></div><div id="step2" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:12px"></div>';
 let choices=[];if(correctId){choices.push(correctId);const others=TASKS.filter(t=>t.id!==correctId).map(t=>t.id);while(choices.length<3&&others.length){const i=Math.floor(Math.random()*others.length);choices.push(others.splice(i,1)[0])}for(let i=choices.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[choices[i],choices[j]]=[choices[j],choices[i]]}}else{choices=TASKS.slice(0,3).map(t=>t.id)}
 const qEl=$("#wQuiz");choices.forEach(id=>{const t=TASKS.find(x=>x.id===id);const btn=document.createElement("button");btn.className="chip";btn.textContent=t.icon+" "+t.label;
@@ -404,7 +459,7 @@ btn.onclick=()=>{if(id===correctId||!correctId){btn.classList.add("on");$("#wMsg
 
 function showHoldRing(){const s2=$("#step2");s2.classList.remove("hidden");
 s2.innerHTML='<div class="hold-ring" id="holdRing"><svg viewBox="0 0 180 180"><circle class="track" cx="90" cy="90" r="85"/><circle class="fill" id="hFill" cx="90" cy="90" r="85" stroke-dasharray="534" stroke-dashoffset="534"/></svg><div class="hold-center" id="holdArea"><div class="hold-label">長押し</div><div class="hold-sub">押し続けろ</div></div></div>';
-const sunBg=document.createElement("div");sunBg.className="sunrise-bg";sunBg.style.background="linear-gradient(180deg,#0c1018,#10162a)";document.body.appendChild(sunBg);
+const sunBg=document.createElement("div");makeLights();sunBg.className="sunrise-bg";sunBg.style.background="linear-gradient(180deg,#060810,#0c1018,#10162a)";document.body.appendChild(sunBg);makeLights();
 const HOLD=4000,C=534,fill=$("#hFill"),area=$("#holdArea");let holding=false,startT=0,raf=0,prog=0;
 const DAWN=[[0,"linear-gradient(180deg,#0c1018,#10162a)"],[.25,"linear-gradient(180deg,#1a1520,#1e2040)"],[.5,"linear-gradient(180deg,#2a1c24,#2e2838)"],[.75,"linear-gradient(180deg,#4a3028,#3a2820)"],[1,"linear-gradient(180deg,#6a4828 0%,#c89060 50%,#f0c880 100%)"]];
 function lBg(p){for(let i=DAWN.length-1;i>=0;i--)if(p>=DAWN[i][0]){sunBg.style.background=DAWN[i][1];return}}
@@ -416,13 +471,12 @@ area.addEventListener("mousedown",go);area.addEventListener("touchstart",go,{pas
 function completeWake(){document.querySelectorAll(".sunrise-bg").forEach(e=>e.remove());
 const now=new Date().toISOString(),td=todayS(),bedRec=getBedRec(),ex=recs.find(r=>r.date===td);
 if(ex){ex.wakeup=now;ex.bedtime=ex.bedtime||bedRec?.bedtime;ex.task=ex.task||bedRec?.task;ex.taskId=ex.taskId||bedRec?.taskId}else recs.push({date:td,bedtime:bedRec?.bedtime,wakeup:now,task:bedRec?.task,taskId:bedRec?.taskId});saveR();phase=detectPhase();
-const ol=document.createElement("div");ol.className="overlay wake-ol";ol.style.background="radial-gradient(ellipse at 50% 40%,rgba(60,50,30,.9),rgba(20,18,12,.95))";
-ol.innerHTML='<div class="ov-text d1" style="font-family:var(--fd);font-size:24px;color:#d4b870;letter-spacing:.2em">目覚めの刻</div><div class="ov-text d2" style="font-family:var(--fd);font-size:13px;color:#8a7a5a;font-weight:600;letter-spacing:.08em">おはよう。…よく眠れたか。</div><div class="ov-text d3" style="width:40px;height:1px;background:linear-gradient(90deg,transparent,rgba(220,200,140,.3),transparent)"></div>';
+const ol=document.createElement("div");ol.className="overlay wake-ol";ol.style.background = "radial-gradient(ellipse at 50% 40%, rgba(26, 33, 62, .9), rgba(15, 20, 46, .95))";
+ol.innerHTML='<div class="ov-text d1" style="font-family:var(--fd);font-size:24px;color:#d4b870;letter-spacing:.2em">目覚めの刻</div><div class="ov-text d2" style="font-family:var(--fd);font-size:13px;color:#8a7a5a;font-weight:600;letter-spacing:.08em">おはよう。…よく眠れたか。</div>';
 document.body.appendChild(ol);setTimeout(()=>{ol.remove();render()},8000)}
 
 /* ══ WAKE DONE ══ */
 function renderWakeDone() {
-  makeLights(12);
   const rec = recs.find(r => r.date === todayS());
   const stk = getStreak(recs, "wakeup");
 
@@ -487,7 +541,7 @@ V.innerHTML=sorted.map(r=>{const dur=diffM(r.bedtime,r.wakeup);return'<div class
 /* ══ SETTINGS ══ */
 function renderSettings(){V.innerHTML='<div style="width:100%;max-width:400px"><div class="s-row"><span class="s-lbl">起床目標時刻</span><input type="time" class="s-in" id="sW" value="'+settings.wakeTarget+'"></div><div style="font-size:12px;color:#3a4555;padding:16px 0 8px;font-family:var(--fd)">就寝ゲート ── 時刻閾値</div><div class="s-row"><span class="s-lbl">早い ── 未満</span><input type="time" class="s-in" id="sE" value="'+settings.thresholds.early+'"></div><div class="s-row"><span class="s-lbl">適正 ── 未満</span><input type="time" class="s-in" id="sN" value="'+settings.thresholds.normal+'"></div><div class="s-row"><span class="s-lbl">遅い ── 未満</span><input type="time" class="s-in" id="sL" value="'+settings.thresholds.late+'"></div><div style="font-size:12px;color:#2a3038;padding:4px 0 16px">上記未満 → 深夜</div><div style="padding-top:24px;border-top:1px solid rgba(255,255,255,.03)"><button class="xs-btn" id="dA" style="color:#6a3030;border-color:#3a2020">全記録を削除</button></div></div>';
 const b=(i,f)=>$(i).addEventListener("change",f);b("#sW",e=>{settings.wakeTarget=e.target.value;saveS()});b("#sE",e=>{settings.thresholds.early=e.target.value;saveS()});b("#sN",e=>{settings.thresholds.normal=e.target.value;saveS()});b("#sL",e=>{settings.thresholds.late=e.target.value;saveS()});
-$("#dA").onclick=()=>{if(confirm("全記録を削除する。よいか？")){localStorage.removeItem(RK);recs=[];phase=detectPhase();render()}}}
+$("#dA").onclick=()=>{if(confirm("全記録を削除する。よいな？")){localStorage.removeItem(RK);recs=[];phase=detectPhase();render()}}}
 
 /* ══ Tick ══ */
 setInterval(()=>{const c=$("#clk");if(c)c.textContent=hm();if(view==="gate"){const np=detectPhase();if(np!==phase){phase=np;render()}}},30000);
