@@ -2,11 +2,12 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>関門 — Gate</title>
-<link rel="manifest" href="./manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#1a1a2e">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap" rel="stylesheet">
@@ -17,14 +18,45 @@
 
 *{ box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body {overscroll-behavior: none;}
+/* 土台の色を一番暗い色で塗りつぶす（隙間対策） */
+html, body {
+  background-color: #1a1a2e; 
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+}
 
 body{
 background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
 color:#c8cdd3;font-family:var(--fb);
 transition:background 2s ease;overflow-x:hidden}
 
-.app{display:flex;flex-direction:column;min-height:100vh;position:relative}
+/* 背景グラデーション専用の固定要素（ここがキモ） */
+body::before {
+  content: "";
+  position: fixed; /* 画面に固定 */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 元々のグラデーションを指定 */
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  z-index: -1; /* コンテンツの裏側に回す */
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* セーフエリア（ノッチ対策）の余白を確保 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  position: relative;
+  z-index: 1;
+}
 
 .hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 20px 8px;padding-top:calc(16px + env(safe-area-inset-top,0px));margin-inline: auto; width: 100%;position:relative;z-index:2}
 
@@ -32,7 +64,7 @@ transition:background 2s ease;overflow-x:hidden}
 .hdr-phase{font-family:var(--fd);font-size:15px;color:#3a4555;letter-spacing:.06em}
 .tabs{display:flex;padding:0 20px;border-bottom:1px solid rgba(255,255,255,.05);position:relative;z-index:2}
 .tab{padding:10px 16px;font-size:13px;color:#3a4555;background:none;border:none;border-bottom:1.5px solid transparent;cursor:pointer;font-family:var(--fb)}
-.tab.on{color:#d4b96a;border-bottom-color:#d4b96a;font-weight:500}
+.tab.on{color:#4a5e70;border-bottom-color:#4a5e70;font-weight:500}
 .main{flex:1;display:flex;flex-direction:column;align-items:center;padding:24px 20px;gap:16px;position:relative;z-index:2;padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 
 /* 1. 配置の安定化：centeredでも上下の余白を固定する */
@@ -80,7 +112,7 @@ transition:background 2s ease;overflow-x:hidden}
 .accent{display:inline-block;width:40px;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);margin:8px 0}
 .big-btn{width:170px;height:170px;border-radius:50%;font-family:var(--fd);font-size:18px;cursor:pointer;transition:all .4s;display:flex;align-items:center;justify-content:center;letter-spacing:.1em;position:relative;overflow:hidden}
 .big-btn.bed{border:1.5px solid #d4b96a;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.03),transparent 70%);color:#d4b96a;box-shadow:0 0 40px rgba(210,180,100,.06)}
-.big-btn.wake{border:1.5px solid #7aaa6a;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.03),transparent 70%);color:#7aaa6a;box-shadow:0 0 40px rgba(122,170,106,.06)}
+.big-btn.wake{border:1.5px solid #d4b96a;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.03),transparent 70%);color:#d4b96a;box-shadow:0 0 40px rgba(122,170,106,.06)}
 .big-btn.dim{border-color:#2a2e28!important;background:transparent!important;color:#2a2e28!important;box-shadow:none!important;cursor:default}
 .big-btn.faint{opacity:.35}
 .sm-btn{padding:10px 20px;border-radius:24px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);color:#6a7080;font-family:var(--fd);font-size:13px;cursor:pointer}
@@ -112,8 +144,11 @@ transition:background 2s ease;overflow-x:hidden}
 .hold-ring{position:relative;width:180px;height:180px}
 .hold-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
 .hold-ring circle.track{fill:none;stroke:rgba(255,255,255,.06);stroke-width:3}
-.hold-ring circle.fill{fill:none;stroke:#7aaa6a;stroke-width:3;stroke-linecap:round}
-.hold-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fd);color:#7aaa6a;letter-spacing:.08em;cursor:pointer;-webkit-user-select:none;user-select:none}
+
+.hold-ring circle.fill{fill:none;stroke:#d4b96a;stroke-width:3;stroke-linecap:round}
+
+.hold-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--fd);color:#d4b96a;letter-spacing:.08em;cursor:pointer;-webkit-user-select:none;user-select:none}
+
 .hold-label{font-size:16px}.hold-sub{font-size:11px;color:#5a6a5a;margin-top:4px;}
 
 .sunrise-bg{position:fixed;inset:0;z-index:0;pointer-events:none;transition:background .3s ease}
@@ -383,7 +418,7 @@ function renderNight() {
   const pre = (h >= Math.max(0, wh - 2) && h < wh) || (h >= 3 && h < wh);
 
 V.innerHTML = `
-    <div class="clock" style="color:#3a4a5a; font-size:32px" id="clk">${hm()}</div>
+    <div class="clock" style="color:#4a5e70; margin-top:80px; font-size:32px" id="clk">${hm()}</div>
     
     <div class="sub" style="color:#2a3540; margin-bottom:16px">
       ${settings.wakeTarget} まで ${fmtD(sleepL(settings.wakeTarget))}
