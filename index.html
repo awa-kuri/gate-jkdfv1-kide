@@ -45,8 +45,8 @@
   --bg-bed:       linear-gradient(135deg, #0a0e18, #141e30);
   --bg-night:     linear-gradient(180deg, #060810, #0c1018, #10162a);
   --bg-wake:      linear-gradient(180deg, #060810, #0c1018, #10162a);
-  --bg-wake-done: linear-gradient(135deg, var(--color-bg-deep), var(--color-bg-mid) 50%, var(--color-bg-accent));
-  --bg-away:      linear-gradient(135deg, var(--color-bg-deep), var(--color-bg-mid) 50%, var(--color-bg-accent));
+  --bg-wake-done: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  --bg-away:      linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   --bg-history:   linear-gradient(180deg, #0a0e14, #12182a);
   --bg-settings:  linear-gradient(180deg, #0a0e14, #12182a);
 
@@ -94,7 +94,7 @@ body {
   left:   0;
   right:  0;
   bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
-  z-index: -1;
+  z-index: 0;
   background: var(--bg-bed);
   transition: background 2s ease;
 }
@@ -181,7 +181,7 @@ body {
 }
 
 /* ════════════════════════════
-   カード（バースデーカード風）
+   カード
    ════════════════════════════ */
 .card {
   background: var(--card-bg);
@@ -310,9 +310,10 @@ body {
   font-family: var(--fd); font-size: 13px; cursor: pointer;
 }
 .xs-btn {
-  padding: 6px 14px; border-radius: 16px;
+  padding: 6px 10px; border-radius: 16px;
   border: 1px solid var(--chip-border);
   background: none; color: #4a4550;
+margin:10px;
   font-family: var(--fb); font-size: 11px; cursor: pointer;
 }
 
@@ -414,15 +415,15 @@ body {
 .badge.off { background: rgba(255,255,255,0.02); color: #2a3038; }
 .s-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+  padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.03);
   width: 100%; max-width: 400px;
 }
-.s-lbl { font-size: 13px; color: #6a7080; }
+.s-lbl { font-size: 12px; color: #6a7080; }
 .s-in {
-  width: 80px; padding: 6px 10px;
+  width: 80px; padding: 6px 5px;
   background: rgba(255,255,255,0.03); border: 1px solid var(--chip-border);
   border-radius: 4px; color: var(--color-text);
-  font-family: var(--fb); font-size: 14px; text-align: center; outline: none;
+  font-family: var(--fb); font-size: 12px; text-align: center; outline: none;
 }
 .confirm-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
 .confirm-row span { font-size: 12px; color: #5a4a4a; font-family: var(--fd); }
@@ -542,7 +543,7 @@ const MSG_NIGHT = {
     "まだ静かだ。眠れ。",
     "夜は深い。目を閉じろ。",
     "世界が息を潜めている。貴殿も休め。",
-    "……まだ早い。布団に戻れ。",
+    "……まだ早い。眠ればよい。",
     "灯は消えていない。安心して眠れ。",
     "何も考えなくていい。ただ横になっていろ。",
     "……目を閉じていろ。それだけでいい。",
@@ -558,14 +559,15 @@ const MSG_NIGHT = {
     "空が変わり始めた。感じるか。",
     "いずれ朝が来る。今はまだ眠れ。",
     "……星が、薄くなっていくな。",
+    "……朝になれば、身体は軽くなっている。",
   ],
 };
 
 /* 寝直し会話（中途覚醒時） */
 const RESLEEP_OPTIONS = [
   { id: "toilet",   label: "トイレ",   responses: ["戻ったらそのまま横になれ。白湯は飲むな。","用を済ませたら、すぐ布団に戻れ。","体が冷える前に戻れ。"] },
-  { id: "thinking", label: "考え事",   responses: ["その考えは朝まで持つ。手放せ。","夜の思考は歪む。今の考えに価値はない。朝もう一度考えろ。","……頭の中のことを、一つだけ言葉にしてみろ。言葉にしたら、手放せ。"] },
-  { id: "none",     label: "わからない", responses: ["……よくあることだ。目を閉じろ。","理由がないなら、考える必要もない。横になれ。","体が目覚めただけだ。意識まで起こす必要はない。"] },
+  { id: "thinking", label: "考え事",   responses: ["その考えは朝まで保留だ。今は手放せ。","夜の思考は歪む。今の考えに価値はない。朝もう一度考えろ。","……頭の中のことを、一つだけ言葉にしてみろ。言葉にしたら、手放せ。"] },
+  { id: "none",     label: "わからない", responses: ["……よくあることだ。目を閉じろ。","理由がないなら、考える必要もない。横になれ。","身体が目覚めただけだ。意識まで起こす必要はない。"] },
 ];
 
 /* 起床ゲートのメッセージ（睡眠時間条件別） */
@@ -619,7 +621,8 @@ const MSG_AWAY = [
   "私も働いている。お互い様だ。",
   "息を吐け。肩を落とせ。",
   "疲れたら、1分だけ目を閉じろ。",
-  "夕方まで、あと少しだ。",
+  "水分を意識して摂れ。",
+  "今夜は早めに休めるとよいが。",
 ];
 
 /* フェーズ表示名 */
@@ -628,7 +631,7 @@ const PHASE_NAMES = {
   night:     "夜更け",
   wake:      "朝 \u2500 起床",
   "wake-done": "朝 \u2500 通過済",
-  away:      "不在",
+  away:      "昼",
 };
 
 
@@ -756,7 +759,7 @@ function formatDuration(minutes) {
   if (minutes == null) return "--";
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return h + "\u6642\u9593" + (m > 0 ? m + "\u5206" : "");
+  return h + "時間" + (m > 0 ? m + "分" : "");
 }
 
 function toMinutes(hhmm) {
@@ -930,8 +933,6 @@ function setBackground(phase) {
     wake:      "var(--bg-wake)",
     "wake-done": "var(--bg-wake-done)",
     away:      "var(--bg-away)",
-    history:   "var(--bg-history)",
-    settings:  "var(--bg-settings)",
   };
   $("#bg-layer").style.background = bgMap[phase] || bgMap.bed;
 }
@@ -1003,8 +1004,7 @@ function switchView(viewName) {
 function render() {
   clearEffects();
 
-  const displayPhase = currentView === "gate" ? currentPhase : currentView;
-  setBackground(displayPhase);
+setBackground(currentPhase);
 
   $("#phaseLabel").textContent = currentView === "gate" ? (PHASE_NAMES[currentPhase] || "") : "";
   VIEW().className = "main " + (currentView === "gate" ? "centered" : "top");
@@ -1048,18 +1048,18 @@ function renderBed() {
   V.innerHTML =
     '<div class="card">' +
       '<div class="clock" id="clk">' + currentHHMM() + '</div>' +
-      '<div class="sub" style="margin-top:8px">' + settings.wakeTarget + ' \u8D77\u5E8A\u307E\u3067 ' + formatDuration(sleepMin) + '</div>' +
+      '<div class="sub" style="margin-top:8px">' + settings.wakeTarget + ' 起床まで ' + formatDuration(sleepMin) + '</div>' +
       (streakCount >= 2 ? '<div class="strk" style="margin-top:8px">' + pick(MSG_STREAK_BED).replace("{n}", streakCount) + '</div>' : '') +
       '<div class="accent"></div>' +
       '<div class="msg">' + message + '</div>' +
     '</div>' +
-    '<div class="input-lbl">\u660E\u671D\u3084\u308B\u3053\u3068</div>' +
+    '<div class="input-lbl">明日やること</div>' +
     '<div class="chip-row">' +
       TASKS.map(t => '<button class="chip" data-id="' + t.id + '">' + t.icon + ' ' + t.label + '</button>').join('') +
     '</div>' +
-    '<div id="otherWrap" class="hidden"><input class="input" id="otherInput" placeholder="\u5177\u4F53\u7684\u306B\u4E00\u8A00"></div>' +
-    '<div class="self-wake">\u300C' + settings.wakeTarget + ' \u306B\u8D77\u304D\u308B\u300D\u2500\u2500\u610F\u8B58\u3057\u3066\u304B\u3089\u7720\u308C\u3002</div>' +
-    '<button class="big-btn bed faint" id="sleepBtn" disabled>\u5C31\u5BDD\u3059\u308B</button>';
+    '<div id="otherWrap" class="hidden"><input class="input" id="otherInput" placeholder="具体的に一言"></div>' +
+    '<div class="self-wake">\u300C' + settings.wakeTarget + ' に起きる」──意識してから眠れ。</div>' +
+    '<button class="big-btn bed faint" id="sleepBtn" disabled>就寝する</button>';
 
   /* チップ選択 */
   document.querySelectorAll(".chip").forEach(chip => {
@@ -1083,7 +1083,7 @@ function executeSleep() {
   const label = taskDef ? taskDef.label : "";
   const otherInput = $("#otherInput");
   const fullTask = (selectedTaskId === "other" && otherInput)
-    ? label + "\uFF1A" + (otherInput.value.trim() || "")
+    ? label + "：" + (otherInput.value.trim() || "")
     : label;
 
   /* おやすみ演出 */
@@ -1091,9 +1091,9 @@ function executeSleep() {
   overlay.className = "overlay";
   overlay.style.background = "rgba(4,6,10,0.96)";
   overlay.innerHTML =
-    '<div class="ov-text d1" style="font-family:var(--fd);font-size:22px;color:#8a9aaa;letter-spacing:0.2em">\u7720\u308A\u306E\u523B</div>' +
+    '<div class="ov-text d1" style="font-family:var(--fd);font-size:22px;color:#8a9aaa;letter-spacing:0.2em">眠りの刻</div>' +
     '<div class="ov-text d2" style="font-family:var(--fd);font-size:13px;color:#3a4a5a;font-weight:600;letter-spacing:0.08em">' +
-      settings.wakeTarget + ' \u306B\u3001\u307E\u305F\u4F1A\u304A\u3046\u3002\u2026\u304A\u3084\u3059\u307F\u3002</div>';
+      settings.wakeTarget + ' に、また会おう。…おやすみ。</div>';
   document.body.appendChild(overlay);
 
   setTimeout(() => {
@@ -1121,8 +1121,8 @@ function renderNight() {
     '<div id="nightMsg" class="night-msg" style="margin-bottom:24px">' + message + '</div>' +
     '<div class="ember"></div>' +
     '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
-      '<button class="sm-btn" id="resleepBtn" style="width:160px">\u5BDD\u76F4\u3059</button>' +
-      '<button class="xs-btn" id="cancelBedBtn" style="width:160px">\u5C31\u5BDD\u3092\u53D6\u6D88</button>' +
+      '<button class="sm-btn" id="resleepBtn" style="width:160px">寝直す</button>' +
+      '<button class="xs-btn" id="cancelBedBtn" style="width:160px">就寝を取消</button>' +
     '</div>' +
     '<div id="nightAction" class="hidden" style="margin-top:12px;text-align:center"></div>';
 
@@ -1133,7 +1133,7 @@ function renderNight() {
     const actionArea = $("#nightAction");
     actionArea.classList.remove("hidden");
     actionArea.innerHTML =
-      '<div class="sub" style="margin-bottom:8px">\u76EE\u304C\u899A\u3081\u305F\u7406\u7531\u306F\uFF1F</div>' +
+      '<div class="sub" style="margin-bottom:8px">目が覚めたか。…どうした。</div>' +
       '<div class="chip-row">' +
         RESLEEP_OPTIONS.map(opt =>
           '<button class="chip" data-resleep="' + opt.id + '">' + opt.label + '</button>'
@@ -1164,9 +1164,9 @@ function renderNight() {
     actionArea.classList.remove("hidden");
     actionArea.innerHTML =
       '<div class="confirm-row" style="justify-content:center">' +
-        '<span>\u5C31\u5BDD\u8A18\u9332\u3092\u6D88\u3059\uFF1F</span>' +
-        '<button class="xs-btn" id="confirmCancel" style="color:#8a5050;border-color:#5a3030">\u306F\u3044</button>' +
-        '<button class="xs-btn" id="denyCancel">\u3044\u3044\u3048</button>' +
+        '<span>就寝記録を削除するか？</span>' +
+        '<button class="xs-btn" id="confirmCancel" style="color:#8a5050;border-color:#5a3030">○</button>' +
+        '<button class="xs-btn" id="denyCancel">×</button>' +
       '</div>';
     $("#confirmCancel").onclick = () => {
       cancelActiveSession();
@@ -1197,8 +1197,8 @@ function renderWake() {
     '<div class="card" style="background:rgba(255,255,255,0.04)">' +
       '<div class="clock" id="clk" style="font-size:36px">' + currentHHMM() + '</div>' +
       '<div class="accent"></div>' +
-      '<div class="msg" id="wakeMsg">\u76EE\u304C\u899A\u3081\u305F\u304B\u3002\u2500\u2500\u6628\u591C\u6C7A\u3081\u305F\u3053\u3068\u3092\u601D\u3044\u51FA\u305B\u3002</div>' +
-      '<div class="sub" id="wakeSub">\u4ECA\u671D\u3084\u308B\u3053\u3068\u3092\u9078\u3079\u3002</div>' +
+      '<div class="msg" id="wakeMsg">目が覚めたか。──昨夜決めたことを思い出せ。</div>' +
+      '<div class="sub" id="wakeSub">今日やることを選べ。</div>' +
     '</div>' +
     '<div class="chip-row" id="wakeQuiz"></div>' +
     '<div id="wakeStep2" class="hidden" style="display:flex;flex-direction:column;align-items:center;gap:12px"></div>';
@@ -1231,14 +1231,14 @@ function renderWake() {
     btn.onclick = () => {
       if (id === correctId || !correctId) {
         btn.classList.add("on");
-        $("#wakeMsg").textContent = "\u305D\u3046\u3060\u3002\u2500\u2500\u3067\u306F\u3001\u8D77\u304D\u308D\u3002";
-        $("#wakeSub").textContent = "\u4E0B\u306E\u74B0\u3092\u9577\u62BC\u3057\u305B\u3088\u3002";
+        $("#wakeMsg").textContent = "そうだ。──では、起きろ。";
+        $("#wakeSub").textContent = "環を長押しせよ。";
         quizArea.classList.add("hidden");
         showHoldRing();
       } else {
         btn.classList.add("wrong");
         setTimeout(() => btn.classList.remove("wrong"), 500);
-        $("#wakeMsg").textContent = "\u9055\u3046\u3002\u2500\u2500\u3082\u3046\u4E00\u5EA6\u601D\u3044\u51FA\u305B\u3002";
+        $("#wakeMsg").textContent = "違う。──もう一度思い出せ。";
       }
     };
 
@@ -1256,8 +1256,8 @@ function showHoldRing() {
         '<circle class="fill" id="holdFill" cx="90" cy="90" r="85" stroke-dasharray="534" stroke-dashoffset="534"/>' +
       '</svg>' +
       '<div class="hold-center" id="holdArea">' +
-        '<div class="hold-label">\u9577\u62BC\u3057</div>' +
-        '<div class="hold-sub">\u62BC\u3057\u7D9A\u3051\u308D</div>' +
+        '<div class="hold-label">長押し</div>' +
+        '<div class="hold-sub">押し続けろ</div>' +
       '</div>' +
     '</div>';
 
@@ -1355,8 +1355,8 @@ function executeWakeup() {
   overlay.className = "overlay wake-ol";
   overlay.style.background = "radial-gradient(ellipse at 50% 40%, rgba(26,33,62,0.9), rgba(15,20,46,0.95))";
   overlay.innerHTML =
-    '<div class="ov-text d1" style="font-family:var(--fd);font-size:24px;color:#d4b870;letter-spacing:0.2em">\u76EE\u899A\u3081\u306E\u523B</div>' +
-    '<div class="ov-text d2" style="font-family:var(--fd);font-size:13px;color:#8a7a5a;font-weight:600;letter-spacing:0.08em">\u304A\u306F\u3088\u3046\u3002\u2026\u3088\u304F\u7720\u308C\u305F\u304B\u3002</div>';
+    '<div class="ov-text d1" style="font-family:var(--fd);font-size:24px;color:#d4b870;letter-spacing:0.2em">目覚めの刻</div>' +
+    '<div class="ov-text d2" style="font-family:var(--fd);font-size:13px;color:#8a7a5a;font-weight:600;letter-spacing:0.08em">おはよう。…よく眠れたか。</div>';
   document.body.appendChild(overlay);
 
   setTimeout(() => {
@@ -1375,7 +1375,7 @@ function executeWakeup() {
 function renderWakeDone() {
   const lastDone = getLastCompletedSession();
   if (!lastDone || !lastDone.wakeup) {
-    VIEW().innerHTML = '<div class="msg">\u8A18\u9332\u306A\u3057</div>';
+    VIEW().innerHTML = '<div class="msg">記録なし</div>';
     return;
   }
 
@@ -1398,9 +1398,9 @@ function renderWakeDone() {
       '</div>' +
       '<div class="accent"></div>' +
       '<div class="sleep-info" style="margin:12px 0">' +
-        (session.bedtime ? '<div class="stat"><div class="stat-v">' + formatTime(session.bedtime) + '</div><div class="stat-l">\u5C31\u5BDD</div></div>' : '') +
-        '<div class="stat"><div class="stat-v">' + formatTime(session.wakeup) + '</div><div class="stat-l">\u8D77\u5E8A</div></div>' +
-        '<div class="stat"><div class="stat-v" style="color:' + durColor + '">' + formatDuration(sleepMin) + '</div><div class="stat-l">\u7761\u7720</div></div>' +
+        (session.bedtime ? '<div class="stat"><div class="stat-v">' + formatTime(session.bedtime) + '</div><div class="stat-l">就寝</div></div>' : '') +
+        '<div class="stat"><div class="stat-v">' + formatTime(session.wakeup) + '</div><div class="stat-l">起床</div></div>' +
+        '<div class="stat"><div class="stat-v" style="color:' + durColor + '">' + formatDuration(sleepMin) + '</div><div class="stat-l">睡眠</div></div>' +
       '</div>' +
       '<div class="accent"></div>' +
       '<div class="msg" style="padding:0">' + wakeMsg + '</div>' +
@@ -1427,12 +1427,12 @@ function renderAway() {
       '</div>' +
       '<div class="accent"></div>' +
       '<div style="font-family:var(--fd);font-size:15px;color:var(--color-night);letter-spacing:0.1em;margin:12px 0">' +
-        '\u2500\u2500 \u4E0D\u5728 \u2500\u2500' +
+        '──不在中──' +
       '</div>' +
-      '<div class="sub" style="margin:8px 0">' + settings.awayEnd + ' \u306B\u623B\u308B\u3002</div>' +
+      '<div class="sub" style="margin:8px 0">' + settings.awayEnd + ' に戻る。</div>' +
       '<div class="accent"></div>' +
-      '<div class="sub" style="margin-top:12px">\u4ECA\u591C\u306E\u5C31\u5BDD\u76EE\u6A19\u3000' + th.normal + '</div>' +
-      '<div class="msg" style="margin-top:16px;font-size:13px">\u300C' + message + '\u300D</div>' +
+      '<div class="sub" style="margin-top:12px">今夜の就寝目標' + th.normal + '</div>' +
+      '<div class="msg" style="margin-top:16px;font-size:13px">「' + message + '」</div>' +
     '</div>';
 }
 
@@ -1450,7 +1450,7 @@ function renderHistory() {
 
   const V = VIEW();
   if (!sorted.length) {
-    V.innerHTML = '<div class="sub" style="padding:40px 0">\u8A18\u9332\u306A\u3057</div>';
+    V.innerHTML = '<div class="sub" style="padding:40px 0">記録なし</div>';
     return;
   }
 
@@ -1460,12 +1460,12 @@ function renderHistory() {
     return '<div class="rec-row" data-id="' + session.id + '">' +
       '<div style="color:var(--color-text-sub);font-size:12px;min-width:68px">' + dateStr + '</div>' +
       '<div style="display:flex;gap:6px">' +
-        '<span class="badge ' + (session.bedtime ? "on" : "off") + '">\u5C31 ' + formatTime(session.bedtime) + '</span>' +
-        '<span class="badge ' + (session.wakeup ? "on" : "off") + '">\u8D77 ' + formatTime(session.wakeup) + '</span>' +
+        '<span class="badge ' + (session.bedtime ? "on" : "off") + '">就 ' + formatTime(session.bedtime) + '</span>' +
+        '<span class="badge ' + (session.wakeup ? "on" : "off") + '">起 ' + formatTime(session.wakeup) + '</span>' +
       '</div>' +
       '<div style="display:flex;align-items:center;gap:6px">' +
         '<span style="color:var(--color-warm);font-family:var(--fd);font-size:13px;min-width:60px;text-align:right">' + formatDuration(dur) + '</span>' +
-        '<button class="del-btn" onclick="confirmDelete(\'' + session.id + '\')">\u00D7</button>' +
+        '<button class="del-btn" onclick="confirmDelete(\'' + session.id + '\')">×</button>' +
       '</div>' +
     '</div>';
   }).join("");
@@ -1483,9 +1483,9 @@ function confirmDelete(sessionId) {
   confirmEl.className = "confirm-row";
   confirmEl.style.cssText = "width:100%;justify-content:flex-end;margin-top:4px";
   confirmEl.innerHTML =
-    '<span>\u524A\u9664\u3059\u308B\uFF1F</span>' +
-    '<button class="xs-btn" style="color:#8a5050;border-color:#5a3030" onclick="executeDelete(\'' + sessionId + '\')">\u306F\u3044</button>' +
-    '<button class="xs-btn" onclick="this.closest(\'.confirm-row\').remove()">\u3044\u3044\u3048</button>';
+    '<span>削除する</span>' +
+    '<button class="xs-btn" style="color:#8a5050;border-color:#5a3030" onclick="executeDelete(\'' + sessionId + '\')">○</button>' +
+    '<button class="xs-btn" onclick="this.closest(\'.confirm-row\').remove()">×</button>';
   row.appendChild(confirmEl);
 }
 
@@ -1508,47 +1508,49 @@ function renderSettings() {
   V.innerHTML =
     '<div style="width:100%;max-width:400px">' +
       /* 起床目標 */
+ '<div style="font-size:12px;color:#8a9aaa;padding:16px 0 8px;font-family:var(--fb)">☀️ 起床ゲート</div>' +
       '<div class="s-row">' +
-        '<span class="s-lbl">\u8D77\u5E8A\u76EE\u6A19\u6642\u523B</span>' +
+        '<span class="s-lbl">起床目標時刻</span>' +
         '<input type="time" class="s-in" id="setWake" value="' + settings.wakeTarget + '">' +
-      '</div>' +
-
-      /* 不在時間 */
-      '<div style="font-size:12px;color:var(--color-text-dim);padding:16px 0 8px;font-family:var(--fd)">\u4E0D\u5728\u6642\u9593</div>' +
-      '<div class="s-row">' +
-        '<span class="s-lbl">\u958B\u59CB</span>' +
-        '<input type="time" class="s-in" id="setAwayStart" value="' + settings.awayStart + '">' +
-      '</div>' +
-      '<div class="s-row">' +
-        '<span class="s-lbl">\u7D42\u4E86\uFF08\u5C31\u5BDD\u30B2\u30FC\u30C8\u51FA\u73FE\uFF09</span>' +
-        '<input type="time" class="s-in" id="setAwayEnd" value="' + settings.awayEnd + '">' +
       '</div>' +
 
       /* 起床ゲート開始 */
       '<div class="s-row">' +
-        '<span class="s-lbl">\u8D77\u5E8A\u30B2\u30FC\u30C8\u958B\u59CB\uFF08\u76EE\u6A19\u306E\u4F55\u5206\u524D\uFF09</span>' +
+        '<span class="s-lbl">起床ゲート開始（目標時刻の何分前）</span>' +
         '<input type="number" class="s-in" id="setWakeReady" value="' + settings.wakeReadyMinutes + '" min="30" max="300" step="10">' +
       '</div>' +
 
+
       /* 就寝閾値 */
-      '<div style="font-size:12px;color:var(--color-text-dim);padding:16px 0 8px;font-family:var(--fd)">' +
-        '\u5C31\u5BDD\u30B2\u30FC\u30C8 \u2500\u2500 \u6642\u523B\u95BE\u5024' +
-        (isAuto ? ' <span style="color:#5a6a5a">(\u81EA\u52D5\u8A08\u7B97)</span>' : ' <span style="color:#6a5a5a">(\u624B\u52D5)</span>') +
+      '<div style="font-size:12px;color:#8a9aaa;padding:16px 0 8px;font-family:var(--fb)">' +
+        '🌙 就寝ゲート ── 時刻閾値' +
+        (isAuto ? ' <span style="color:#5a6a5a">(自動)</span>' : ' <span style="color:#6a5a5a">(手動)</span>') +
+(settings.thresholds ? '<button class="xs-btn" id="resetThresholds" style="margin-bottom:16px">閾値を自動計算に戻す</button>' : '') +
       '</div>' +
       '<div class="s-row">' +
-        '<span class="s-lbl">\u65E9\u3044 \u2500\u2500 \u672A\u6E80</span>' +
+        '<span class="s-lbl">早い ── 未満</span>' +
         '<input type="time" class="s-in" id="setEarly" value="' + th.early + '">' +
       '</div>' +
       '<div class="s-row">' +
-        '<span class="s-lbl">\u9069\u6B63 \u2500\u2500 \u672A\u6E80</span>' +
+        '<span class="s-lbl">適正 ── 未満</span>' +
         '<input type="time" class="s-in" id="setNormal" value="' + th.normal + '">' +
       '</div>' +
       '<div class="s-row">' +
-        '<span class="s-lbl">\u9045\u3044 \u2500\u2500 \u672A\u6E80</span>' +
+        '<span class="s-lbl">遅い ── 未満</span>' +
         '<input type="time" class="s-in" id="setLate" value="' + th.late + '">' +
       '</div>' +
-      '<div style="font-size:12px;color:#2a3038;padding:4px 0 8px">\u4E0A\u8A18\u672A\u6E80 \u2192 \u6DF1\u591C</div>' +
-      (settings.thresholds ? '<button class="xs-btn" id="resetThresholds" style="margin-bottom:16px">\u95BE\u5024\u3092\u81EA\u52D5\u8A08\u7B97\u306B\u623B\u3059</button>' : '') +
+      '<div style="font-size:12px;color:#2a3038;padding:4px 0 8px">上記未満 → 深夜</div>' +
+
+      /* 不在時間 */
+      '<div style="font-size:12px;color:#8a9aaa;padding:16px 0 8px;font-family:var(--fb)">🔒 不在時間</div>' +
+      '<div class="s-row">' +
+        '<span class="s-lbl">不在開始</span>' +
+        '<input type="time" class="s-in" id="setAwayStart" value="' + settings.awayStart + '">' +
+      '</div>' +
+      '<div class="s-row">' +
+        '<span class="s-lbl">不在終了（就寝ゲート出現）</span>' +
+        '<input type="time" class="s-in" id="setAwayEnd" value="' + settings.awayEnd + '">' +
+      '</div>' +
 
       /* 危険ゾーン */
       '<div style="padding-top:24px;border-top:1px solid rgba(255,255,255,0.03)">' +
@@ -1600,7 +1602,7 @@ function renderSettings() {
 
   // 全削除
   $("#deleteAll").onclick = () => {
-    if (confirm("\u5168\u8A18\u9332\u3092\u524A\u9664\u3059\u308B\u3002\u3088\u3044\u306A\uFF1F")) {
+    if (confirm("全記録を削除する。よいな？")) {
       localStorage.removeItem(STORAGE_RECORDS);
       records = [];
       currentPhase = detectPhase();
