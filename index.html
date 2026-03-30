@@ -47,8 +47,8 @@
   --bg-wake:      linear-gradient(180deg, #060810, #0c1018, #10162a);
   --bg-wake-done: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   --bg-away:      linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  --bg-history:   linear-gradient(180deg, #0a0e14, #12182a);
-  --bg-settings:  linear-gradient(180deg, #0a0e14, #12182a);
+  --bg-return: linear-gradient(135deg, #12162a 0%, #1a2038 50%, #1e1a28 100%);
+
 
   /* 日の出グラデーション段階 */
   --sunrise-0: linear-gradient(180deg, #0c1018, #10162a);
@@ -625,6 +625,36 @@ const MSG_AWAY = [
   "今夜は早めに休めるとよいが。",
 ];
 
+/* 帰還フェーズのメッセージ（時間帯別） */
+const MSG_RETURN = {
+  greet: [
+    "戻ったか。今夜も付き合おう。",
+    "おかえり。まず、息を吐け。",
+    "仕事は終わった。ここからは貴殿の時間だ。",
+    "戻ったな。……今日はどうだった。",
+    "おかえり。急がなくていい。",
+  ],
+  evening: [
+    "夕飯はちゃんと摂れ。",
+    "今日の疲れを引きずるな。食べて、座れ。",
+    "まだ時間はある。焦る必要はない。",
+    "少し休め。夜はこれからだ。",
+  ],
+  bath: [
+    "そろそろ風呂の支度を。",
+    "風呂に入ると体が切り替わる。早めに済ませろ。",
+    "湯に浸かる必要はない。シャワーで十分だ。動け。",
+    "先に風呂を済ませると、あとが楽になる。",
+  ],
+  preBed: [
+    "風呂は済んだか。",
+    "あとは布団に向かうだけだ。",
+    "就寝ゲートの時刻が近い。画面を見るのはそろそろ止めろ。",
+    "眠剤はいつ飲む。忘れるな。",
+    "もうじき就寝の刻だ。心の準備をしておけ。",
+  ],
+};
+
 /* フェーズ表示名 */
 const PHASE_NAMES = {
   bed:       "夜 \u2500 就寝",
@@ -632,6 +662,7 @@ const PHASE_NAMES = {
   wake:      "朝 \u2500 起床",
   "wake-done": "朝 \u2500 通過済",
   away:      "昼",
+  "return":  "帰還",
 };
 
 
@@ -876,10 +907,17 @@ function detectPhase() {
     return "away";
   }
 
-  // 不在後（夕方以降）→ 就寝ゲート
-  if (nowMin >= awayEnd) {
-    return "bed";
+// 不在後（夕方以降）
+if (nowMin >= awayEnd) {
+  const th = getThresholds();
+  const earlyMin = toMinutes(th.early);
+  // 就寝閾値(early)より前 → 帰還フェーズ
+  // early が日をまたぐ場合（例: early=22:00, nowMin=23:30）も考慮
+  if (earlyMin > awayEnd && nowMin < earlyMin) {
+    return "return";
   }
+  return "bed";
+}
 
   // 不在前（朝の時間帯）→ 最近起きたなら通過済み、さもなくば就寝ゲート
   const lastDone = getLastCompletedSession();
@@ -933,6 +971,7 @@ function setBackground(phase) {
     wake:      "var(--bg-wake)",
     "wake-done": "var(--bg-wake-done)",
     away:      "var(--bg-away)",
+"return":  "var(--bg-return)",
   };
   $("#bg-layer").style.background = bgMap[phase] || bgMap.bed;
 }
@@ -1436,6 +1475,75 @@ function renderAway() {
     '</div>';
 }
 
+/* ════════════════════════════════════════════════════════════
+   11.5 帰還フェーズ
+   ════════════════════════════════════════════════════════════ */
+
+function getReturnSubPhase() {
+  const h = new Date().getHours();
+  const m = new Date().getMinutes();
+  const nowMin = h * 60 + m;
+  const bathStart = 20 * 60;      // 20:00
+  const preBathEnd = 21 * 60 + 30; // 21:30
+  if (nowMin < bathStart) return "greet";   // ～20:00 は挨拶のまま
+  if (nowMin < preBathEnd) return "bath";   // 20:00～21:30
+  return "preBed";                          // 21:30～
+}
+
+/* 時間帯ごとのメッセージを、同じ時間帯内では固定する */
+let returnMsgCache = { subPhase: null, msg: "" };
+
+function getReturnMessage() {
+  const sub = getReturnSubPhase();
+  // 初回表示は greet から始める（不在から戻った直後）
+  if (returnMsgCache.subPhase === null) {
+    returnMsgCache.subPhase = "greet";
+    returnMsgCache.msg = pick(MSG_RETURN.greet);
+    // greet でない時間帯なら、次の tick で切り替わる
+    if (sub !== "greet") {
+      returnMsgCache.subPhase = sub;
+      returnMsgCache.msg = pick(MSG_RETURN[sub]);
+    }
+    return returnMsgCache.msg;
+  }
+  // 時間帯が変わったらメッセージ更新
+  if (sub !== returnMsgCache.subPhase) {
+    returnMsgCache.subPhase = sub;
+    returnMsgCache.msg = pick(MSG_RETURN[sub]);
+  }
+  return returnMsgCache.msg;
+}
+
+function renderReturn() {
+  const th = getThresholds();
+  const bedTargetMin = toMinutes(th.normal);
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+  const untilBed = ((bedTargetMin - nowMin) + 1440) % 1440;
+
+  const message = getReturnMessage();
+
+  const V = VIEW();
+  V.innerHTML =
+    '<div class="card" style="min-height:280px">' +
+      '<div class="clock" id="clk">' + currentHHMM() + '</div>' +
+      '<div class="accent" style="margin-top:12px"></div>' +
+      '<div class="msg" style="margin:8px 0">' + message + '</div>' +
+      '<div class="accent"></div>' +
+      '<div style="display:flex;gap:24px;justify-content:center;margin:12px 0">' +
+        '<div class="stat">' +
+          '<div class="stat-v">' + th.normal + '</div>' +
+          '<div class="stat-l">就寝目標</div>' +
+        '</div>' +
+        '<div class="stat">' +
+          '<div class="stat-v">' + settings.wakeTarget + '</div>' +
+          '<div class="stat-l">起床目標</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sub" style="margin-top:4px">就寝まで ' + formatDuration(untilBed) + '</div>' +
+    '</div>' +
+    '<div class="ember" style="margin-top:16px"></div>';
+}
+
 
 /* ════════════════════════════════════════════════════════════
    12. 履歴
@@ -1516,7 +1624,7 @@ function renderSettings() {
 
       /* 起床ゲート開始 */
       '<div class="s-row">' +
-        '<span class="s-lbl">起床ゲート開始（目標時刻の何分前）</span>' +
+        '<span class="s-lbl">起床ゲート開始（目標時刻のx分前から）</span>' +
         '<input type="number" class="s-in" id="setWakeReady" value="' + settings.wakeReadyMinutes + '" min="30" max="300" step="10">' +
       '</div>' +
 
@@ -1548,7 +1656,7 @@ function renderSettings() {
         '<input type="time" class="s-in" id="setAwayStart" value="' + settings.awayStart + '">' +
       '</div>' +
       '<div class="s-row">' +
-        '<span class="s-lbl">不在終了（就寝ゲート出現）</span>' +
+        '<span class="s-lbl">不在終了</span>' +
         '<input type="time" class="s-in" id="setAwayEnd" value="' + settings.awayEnd + '">' +
       '</div>' +
 
