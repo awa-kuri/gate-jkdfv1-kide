@@ -679,7 +679,7 @@ const STORAGE_SETTINGS = "gate.settings.v4";
 const DEFAULT_SETTINGS = {
   wakeTarget: "05:00",          // 起床目標時刻
   awayStart:  "10:00",          // 不在開始
-  awayEnd:    "17:00",          // 不在終了（＝就寝ゲート出現）
+  awayEnd:    "17:00",          // 不在終了
   wakeReadyMinutes: 120,        // 起床目標の何分前から起床ゲートを表示
   thresholds: null,             // null = 自動計算。手動設定時は {early, normal, late}
 };
@@ -1061,6 +1061,7 @@ setBackground(currentPhase);
         case "wake":      renderWake();     break;
         case "wake-done": renderWakeDone(); break;
         case "away":      renderAway();     break;
+case "return":  renderReturn();  break;
         default:          renderBed();
       }
       break;
