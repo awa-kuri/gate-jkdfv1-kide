@@ -47,7 +47,7 @@
   --bg-wake:      linear-gradient(180deg, #060810, #0c1018, #10162a);
   --bg-wake-done: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   --bg-away:      linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
---bg-return: radial-gradient(ellipse at 0% 20%, rgba(248,184,99,0.15), transparent 90%), linear-gradient(135deg, #1a1420 0%, #14182e 40%, #0e1428 100%);
+--bg-return: radial-gradient(ellipse at 0% 20%, rgba(248,184,99,0.12), transparent 90%), linear-gradient(135deg, #1a1420 0%, #14182e 40%, #0e1428 100%);
 
   /* 日の出グラデーション段階 */
   --sunrise-0: linear-gradient(180deg, #0c1018, #10162a);
@@ -1515,9 +1515,11 @@ function getReturnSubPhase() {
   const h = new Date().getHours();
   const m = new Date().getMinutes();
   const nowMin = h * 60 + m;
+  const eveStart = 19 * 60;      // 19:00
   const bathStart = 20 * 60;      // 20:00
   const preBathEnd = 21 * 60 + 30; // 21:30
-  if (nowMin < bathStart) return "greet";   // ～20:00 は挨拶のまま
+  if (nowMin < eveStart) return "greet";   // ～19:00 は挨拶のまま
+  if (nowMin < bathStart) return "evening";   // 19:00～20:00
   if (nowMin < preBathEnd) return "bath";   // 20:00～21:30
   return "preBed";                          // 21:30～
 }
