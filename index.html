@@ -847,18 +847,19 @@ function bedtimeCategory() {
   const m = new Date().getMinutes();
   const nowMin = h * 60 + m;
 
-  // 12時間（720分）ずらして、夕方〜翌朝を一直線にする
-  const OFFSET = 720;
-  const norm = (v) => (v + OFFSET) % 1440;
+  // 正午（12:00）を基点にして「夜の時間軸」に正規化する。
+  // こうすると 22:00→600, 23:00→660, 0:00→720, 1:00→780 と
+  // 日付をまたいでも数値が単調増加する。
+  const normalize = (min) => (min - 720 + 1440) % 1440;
 
-  const now_n   = norm(nowMin);
-  const early_n = norm(toMinutes(th.early));
-  const norm_n  = norm(toMinutes(th.normal));
-  const late_n  = norm(toMinutes(th.late));
+  const now_n    = normalize(nowMin);
+  const early_n  = normalize(toMinutes(th.early));
+  const normal_n = normalize(toMinutes(th.normal));
+  const late_n   = normalize(toMinutes(th.late));
 
-  if (now_n < early_n) return "early";
-  if (now_n < norm_n)  return "normal";
-  if (now_n < late_n)  return "late";
+  if (now_n < early_n)  return "early";
+  if (now_n < normal_n) return "normal";
+  if (now_n < late_n)   return "late";
   return "midnight";
 }
 
@@ -940,9 +941,9 @@ function detectPhase() {
 if (nowMin >= awayEnd) {
   const th = getThresholds();
   const earlyMin = toMinutes(th.early);
-  // 就寝閾値(early)より前 → 帰還フェーズ
-  // early が日をまたぐ場合（例: early=22:00, nowMin=23:30）も考慮
-  if (earlyMin > awayEnd && nowMin < earlyMin) {
+  // bedtimeCategoryと同じ正規化で日またぎに対応
+  const normalize = (min) => (min - 720 + 1440) % 1440;
+  if (normalize(nowMin) < normalize(earlyMin)) {
     return "return";
   }
   return "bed";
@@ -1568,7 +1569,7 @@ function getReturnIMG() {
 
 const RETURN_IMAGES = {
   greet:  "img/return-greet.png",
-  evening: "img/return-greet.png",   // greetと同じ絵を使う（湯呑）
+  evening: "img/return-evening.png",
   bath:   "img/return-bath.png",
   preBed: "img/return-prebed.png",
 };
