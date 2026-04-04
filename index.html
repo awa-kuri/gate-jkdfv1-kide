@@ -47,8 +47,7 @@
   --bg-wake:      linear-gradient(180deg, #060810, #0c1018, #10162a);
   --bg-wake-done: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   --bg-away:      linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  --bg-return: linear-gradient(135deg, #12162a 0%, #1a2038 50%, #1e1a28 100%);
-
+--bg-return: radial-gradient(ellipse at 0% 20%, rgba(248,184,99,0.15), transparent 90%), linear-gradient(135deg, #1a1420 0%, #14182e 40%, #0e1428 100%);
 
   /* 日の出グラデーション段階 */
   --sunrise-0: linear-gradient(180deg, #0c1018, #10162a);
@@ -189,7 +188,7 @@ body {
   border-radius: 16px;
   padding: 24px 28px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
   max-width: 380px;
   width: 100%;
   text-align: center;
@@ -568,7 +567,8 @@ const MSG_NIGHT = {
     "灯は消えていない。安心して眠れ。",
     "何も考えなくていい。ただ横になっていろ。",
     "……目を閉じていろ。それだけでいい。",
-    "私はここにいる。貴殿は眠れ。",
+    "私はここにいる。",
+    "……目を閉じて、眠れ。明日も、また歩こう。",
   ],
   predawn: [
     "……新しい日が近い。",
@@ -670,9 +670,10 @@ const MSG_RETURN = {
   preBed: [
     "風呂は済んだか。",
     "あとは布団に向かうだけだ。",
-    "就寝ゲートの時刻が近い。画面を見るのはそろそろ止めろ。",
+    "就寝時刻が近い。画面を見るのはそろそろ止めろ。",
     "眠剤はいつ飲む。忘れるな。",
-    "もうじき就寝の刻だ。心の準備をしておけ。",
+    "もうじき就寝の刻だ。準備をしておけ。",
+    "今夜は、眠れそうか。語りを聞くか。",
   ],
 };
 
@@ -1091,7 +1092,7 @@ setBackground(currentPhase);
         case "wake":      renderWake();     break;
         case "wake-done": renderWakeDone(); break;
         case "away":      renderAway();     break;
-case "return":  renderReturn();  break;
+        case "return":  renderReturn();     break;
         default:          renderBed();
       }
       break;
