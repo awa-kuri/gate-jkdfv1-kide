@@ -203,11 +203,11 @@ body {
     position: relative;
     width: 240px;
     height: 160px;
-    border-radius: 20px;
+    border-radius: 10px;
 overflow: hidden;
     mask-image: 
-        linear-gradient(to right, rgba(255,255,255,0),  rgb(255,255,255) 30%, rgb(255,255,255) 70%, rgba(255,255,255,0)),
-        linear-gradient(to bottom, rgba(255,255,255,0), rgb(255,255,255) 30%, rgb(255,255,255) 70%, rgba(255,255,255,0));
+        linear-gradient(to right, rgba(255,255,255,0),  rgb(255,255,255) 20%, rgb(255,255,255) 90%, rgba(255,255,255,0)),
+        linear-gradient(to bottom, rgba(255,255,255,0), rgb(255,255,255) 20%, rgb(255,255,255) 90%, rgba(255,255,255,0));
     mask-composite: intersect;
     -webkit-mask-composite: source-in;
 }
@@ -1592,7 +1592,7 @@ function renderReturn() {
       '<div class="clock" id="clk">' + currentHHMM() + '</div>' +
       '<div class="accent" style="margin-top:12px"></div>' +
       '<img src="' + (RETURN_IMAGES[getReturnSubPhase()] || "") + '"' +
-  ' class="img-box "style="width:180px;height:auto;opacity:0.7;margin:8px 0;animation:viewFadeIn 1.5s ease-out both"' +
+  ' class="img-box" style="width:240px;height:auto;opacity:0.7;margin:8px 0;animation:viewFadeIn 1.5s ease-out both"' +
   ' onerror="this.style.display=\'none\'">' +
       '<div class="msg" style="margin:8px 0">' + message + '</div>' +
       '<div class="accent"></div>' +
@@ -1790,7 +1790,8 @@ function renderSettings() {
    14. タイマー・初期化
    ════════════════════════════════════════════════════════════ */
 
-/* 30秒ごとに時計更新＋フェーズ自動遷移 */
+let currentReturnSub = null;  // 帰還サブフェーズの追跡用
+
 setInterval(() => {
   // 時計の更新
   const clockEl = $("#clk");
@@ -1801,7 +1802,18 @@ setInterval(() => {
     const nextPhase = detectPhase();
     if (nextPhase !== currentPhase) {
       currentPhase = nextPhase;
+      currentReturnSub = null;  // フェーズが変わったらリセット
       render();
+    } else if (currentPhase === "return") {
+      // 帰還フェーズ内のサブフェーズ変化を検知
+      const nextSub = getReturnSubPhase();
+      if (currentReturnSub === null) {
+        currentReturnSub = nextSub;
+      } else if (nextSub !== currentReturnSub) {
+        currentReturnSub = nextSub;
+        returnMsgCache.subPhase = null;  // メッセージキャッシュをリセット
+        render();
+      }
     }
   }
 }, 30000);
