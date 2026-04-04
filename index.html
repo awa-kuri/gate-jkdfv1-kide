@@ -1550,11 +1550,19 @@ function renderReturn() {
 
   const message = getReturnMessage();
 
+const RETURN_ILLUST = {
+  greet:   "img/return-greet.png",
+  evening: "img/return-evening.png",
+  bath:    "img/return-bath.png",
+  preBed:  "img/return-prebed.png",
+};
+
   const V = VIEW();
   V.innerHTML =
     '<div class="card" style="min-height:280px">' +
       '<div class="clock" id="clk">' + currentHHMM() + '</div>' +
       '<div class="accent" style="margin-top:12px"></div>' +
+      '<img src="${RETURN_ILLUST[getReturnSubPhase()]}" alt="" style="width:240px; height:160px; opacity:0.5; margin:8px 0; object-fit:contain">' +
       '<div class="msg" style="margin:8px 0">' + message + '</div>' +
       '<div class="accent"></div>' +
       '<div style="display:flex;gap:24px;justify-content:center;margin:12px 0">' +
