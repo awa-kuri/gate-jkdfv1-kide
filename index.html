@@ -820,16 +820,43 @@ function sleepDurationColor(minutes) {
 }
 
 /* 就寝時刻のカテゴリ判定 */
+// function bedtimeCategory() {
+//   const th = getThresholds();
+//   const h = new Date().getHours();
+//   const m = new Date().getMinutes();
+//   const nowMin = h * 60 + m;
+// 
+//   if (h >= 0 && h < 5) return "midnight";
+//   if (nowMin < toMinutes(th.early))  return "early";
+//   if (nowMin < toMinutes(th.normal)) return "normal";
+//   if (toMinutes(th.late) === 0 || nowMin < toMinutes(th.late)) return "late";
+//   return "midnight";
+// }
+
 function bedtimeCategory() {
   const th = getThresholds();
   const h = new Date().getHours();
   const m = new Date().getMinutes();
   const nowMin = h * 60 + m;
 
-  if (h >= 0 && h < 5) return "midnight";
-  if (nowMin < toMinutes(th.early))  return "early";
-  if (nowMin < toMinutes(th.normal)) return "normal";
-  if (toMinutes(th.late) === 0 || nowMin < toMinutes(th.late)) return "late";
+  // 1. まず「朝の境界」を定義する。2時を過ぎ、かつ5時未満なら無条件で midnight
+  if (h >= 2 && h < 5) return "midnight";
+
+  // 2. 次に、18時（1080分）以降の判定を行う。
+  // 日付を跨ぐ前（18:00〜23:59）の判定
+  if (nowMin >= 1080) {
+    if (nowMin < toMinutes(th.early))  return "early";
+    if (nowMin < toMinutes(th.normal)) return "normal";
+    if (toMinutes(th.late) === 0 || nowMin < toMinutes(th.late)) return "late";
+    return "midnight";
+  }
+
+  // 3. 日付を跨いだ後（0:00〜1:59）の判定
+  // ここに来るということは、h は 0 か 1 である。
+  // これらは「late」の閾値（例えば26時相当）と比較せねばならぬ。
+  const extendedMin = nowMin + 1440; // 24時間を足して継続させる
+  if (toMinutes(th.late) === 0 || extendedMin < toMinutes(th.late) + 1440) return "late";
+  
   return "midnight";
 }
 
@@ -971,7 +998,7 @@ function setBackground(phase) {
     wake:      "var(--bg-wake)",
     "wake-done": "var(--bg-wake-done)",
     away:      "var(--bg-away)",
-"return":  "var(--bg-return)",
+    "return":  "var(--bg-return)",
   };
   $("#bg-layer").style.background = bgMap[phase] || bgMap.bed;
 }
