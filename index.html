@@ -46,8 +46,16 @@
   --bg-night:     linear-gradient(180deg, #060810, #0c1018, #10162a);
   --bg-wake:      linear-gradient(180deg, #060810, #0c1018, #10162a);
   --bg-wake-done: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  --bg-away:      linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
 --bg-return: radial-gradient(ellipse at 0% 20%, rgba(248,184,99,0.12), transparent 90%), linear-gradient(135deg, #1a1420 0%, #14182e 40%, #0e1428 100%);
+
+/* 不在フェーズ専用（ライトテーマ・伝言メモ風） */
+--bg-away-light:       linear-gradient(180deg, #f5ecd9 0%, #ebe0c8 100%);
+--color-away-text:     #3a3020;
+--color-away-sub:      #6a5e48;
+--color-away-accent:   #b87333;
+--card-away-bg:        rgba(255, 252, 240, 0.85);
+--card-away-border:    rgba(180, 140, 80, 0.25);
+
 
   /* 日の出グラデーション段階 */
   --sunrise-0: linear-gradient(180deg, #0c1018, #10162a);
@@ -178,6 +186,7 @@ body {
   justify-content: flex-start;
   padding-top: 20px;
 }
+
 
 /* ════════════════════════════
    カード
@@ -470,6 +479,49 @@ margin:10px;
 @keyframes shake        { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 @keyframes floatUp      { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.6; } 85% { opacity: 0.4; } 100% { opacity: 0; transform: translateY(calc(-100vh - 40px)); } }
 @keyframes viewFadeIn   { from { opacity: 0; } to { opacity: 1; } }
+
+
+
+/* ════════════════════════════
+   不在フェーズ：書き置き風
+   ════════════════════════════ */
+
+/* 不在フェーズ：書き置き風 */
+.away-card {
+  background: linear-gradient(135deg, rgba(240, 220, 180, 0.06) 0%, rgba(220, 200, 160, 0.04) 100%);
+  border: 1px solid rgba(220, 190, 130, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 40px rgba(180, 140, 70, 0.03);
+}
+.away-date {
+  font-family: var(--fd);
+  font-size: 14px;
+  color: #b8a878;
+  letter-spacing: 0.2em;
+  margin-bottom: 16px;
+}
+.away-title {
+  font-family: var(--fd);
+  font-size: 16px;
+  color: #c8b078;
+  letter-spacing: 0.15em;
+  margin: 12px 0;
+}
+.away-text {
+  font-family: var(--fd);
+  font-size: 13px;
+  color: #a09070;
+  line-height: 1.8;
+  margin: 8px 0;
+}
+.away-msg {
+  font-family: var(--fd);
+  font-size: 13px;
+  color: #b8a070;
+  margin-top: 16px;
+  font-style: italic;
+}
+
+
 </style>
 </head>
 
@@ -1001,7 +1053,7 @@ function setBackground(phase) {
     night:     "var(--bg-night)",
     wake:      "var(--bg-wake)",
     "wake-done": "var(--bg-wake-done)",
-    away:      "var(--bg-away)",
+    "away":    "var(--bg-away-light)",
     "return":  "var(--bg-return)",
   };
   $("#bg-layer").style.background = bgMap[phase] || bgMap.bed;
@@ -1492,18 +1544,38 @@ function renderAway() {
 
   const V = VIEW();
   V.innerHTML =
-    '<div class="card" style="min-height:260px">' +
-      '<div class="sub" style="font-size:14px;color:var(--color-text-dim);letter-spacing:0.2em;margin-bottom:16px">' +
+    '<div class="card" style="' +
+      'background:var(--card-away-bg);' +
+      'border:1px solid var(--card-away-border);' +
+      'box-shadow:0 4px 16px rgba(120,90,40,0.15);' +
+      'min-height:260px;' +
+      'font-family:var(--fd);' +
+      'color:var(--color-away-text)">' +
+
+      '<div style="font-size:14px;color:var(--color-away-sub);letter-spacing:0.2em;margin-bottom:16px">' +
         new Date().toLocaleDateString("ja-JP", { month: "long", day: "numeric", weekday: "short" }) +
       '</div>' +
-      '<div class="accent"></div>' +
-      '<div style="font-family:var(--fd);font-size:15px;color:var(--color-night);letter-spacing:0.1em;margin:12px 0">' +
-        '──不在中──' +
+
+      '<div style="display:inline-block;width:60px;height:1px;background:var(--color-away-accent);opacity:0.4;margin:4px 0"></div>' +
+
+      '<div style="font-family:var(--fd);font-size:16px;color:var(--color-away-text);letter-spacing:0.15em;margin:14px 0;font-weight:500">' +
+        '── 不在中 ──' +
       '</div>' +
-      '<div class="sub" style="margin:8px 0">' + settings.awayEnd + ' に戻る。</div>' +
-      '<div class="accent"></div>' +
-      '<div class="sub" style="margin-top:12px">今夜の就寝目標' + th.normal + '</div>' +
-      '<div class="msg" style="margin-top:16px;font-size:13px">「' + message + '」</div>' +
+
+      '<div style="font-size:13px;color:var(--color-away-sub);margin:4px 0">' +
+        settings.awayEnd + ' に戻る。' +
+      '</div>' +
+
+      '<div style="display:inline-block;width:60px;height:1px;background:var(--color-away-accent);opacity:0.4;margin:12px 0"></div>' +
+
+      '<div style="font-size:12px;color:var(--color-away-sub);margin-top:8px;line-height:1.8">' +
+        '今夜の就寝目標　' + th.normal + '<br>' +
+        '明朝の起床目標　' + settings.wakeTarget +
+      '</div>' +
+
+      '<div style="font-family:var(--fd);font-size:14px;color:var(--color-away-text);margin-top:20px;font-style:italic;line-height:1.8">' +
+        '「' + message + '」' +
+      '</div>' +
     '</div>';
 }
 
