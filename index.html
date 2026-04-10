@@ -451,7 +451,7 @@ margin:10px;
 .s-in {
   width: 80px; padding: 6px 5px;
   background: rgba(255,255,255,0.03); border: 1px solid var(--chip-border);
-  border-radius: 4px; color: var(--color-text);
+  border-radius: 4px; color: #6a7080;
   font-family: var(--fb); font-size: 12px; text-align: center; outline: none;
 }
 .confirm-row { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
@@ -1754,7 +1754,7 @@ function renderSettings() {
   V.innerHTML =
     '<div style="width:100%;max-width:400px">' +
       /* 起床目標 */
- '<div style="font-size:12px;color:#8a9aaa;padding:16px 0 8px;font-family:var(--fb)">☀️ 起床ゲート</div>' +
+ '<div style="font-size:12px;color:#6a7080;padding:16px 0 8px;font-family:var(--fb)">☀️ 起床ゲート</div>' +
       '<div class="s-row">' +
         '<span class="s-lbl">起床目標時刻</span>' +
         '<input type="time" class="s-in" id="setWake" value="' + settings.wakeTarget + '">' +
@@ -1768,7 +1768,7 @@ function renderSettings() {
 
 
       /* 就寝閾値 */
-      '<div style="font-size:12px;color:#8a9aaa;padding:16px 0 8px;font-family:var(--fb)">' +
+      '<div style="font-size:12px;color:#6a7080;padding:16px 0 8px;font-family:var(--fb)">' +
         '🌙 就寝ゲート ── 時刻閾値' +
         (isAuto ? ' <span style="color:#5a6a5a">(自動)</span>' : ' <span style="color:#6a5a5a">(手動)</span>') +
 (settings.thresholds ? '<button class="xs-btn" id="resetThresholds" style="margin-bottom:16px">閾値を自動計算に戻す</button>' : '') +
@@ -1785,10 +1785,10 @@ function renderSettings() {
         '<span class="s-lbl">遅い ── 未満</span>' +
         '<input type="time" class="s-in" id="setLate" value="' + th.late + '">' +
       '</div>' +
-      '<div style="font-size:12px;color:#2a3038;padding:4px 0 8px">上記未満 → 深夜</div>' +
+      '<div style="font-size:12px;color:#6a7080;;padding:4px 0 8px">※上記以降 → 深夜</div>' +
 
       /* 不在時間 */
-      '<div style="font-size:12px;color:#8a9aaa;padding:16px 0 8px;font-family:var(--fb)">🔒 不在時間</div>' +
+      '<div style="font-size:12px;color:#6a7080;padding:16px 0 8px;font-family:var(--fb)">🔒 不在時間</div>' +
       '<div class="s-row">' +
         '<span class="s-lbl">不在開始</span>' +
         '<input type="time" class="s-in" id="setAwayStart" value="' + settings.awayStart + '">' +
