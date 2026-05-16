@@ -81,13 +81,15 @@
    ════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
-  height: 100%;
+  margin: 0;
   width: 100%;
+  min-height: 100%;
   overflow-x: hidden;
   overscroll-behavior: none;
   background-color: var(--color-safe-bg);
 }
 body {
+  min-height: 100dvh;
   color: var(--color-text);
   font-family: var(--fb);
 }
@@ -117,6 +119,7 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
 }
 
 /* ヘッダー */
