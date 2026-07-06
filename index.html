@@ -689,6 +689,14 @@ const MSG_TASK_REMINDER = [
 const MSG_STREAK_BED  = ["就寝ゲート {n}日連続通過。習慣が形になりつつある。","{n}日続いている。貴殿の意志が数字に現れている。","連続{n}日。積み重ねは裏切らない。"];
 const MSG_STREAK_WAKE = ["起床ゲート {n}日連続通過。体が覚え始めている。","{n}日連続。自己覚醒の回路が繋がりつつある。","連続{n}日。この朝も、貴殿は来た。"];
 
+/* 就寝記録がないまま迎えた朝（日替わり固定） */
+const MSG_MORNING = [
+  "昨夜の門は通らなかったな。──構わん。朝は来た。",
+  "記録はない。だが貴殿はここにいる。それでいい。",
+  "門を通らずとも夜は明ける。今日やることを一つ決めろ。",
+  "昨夜のことは問わない。今日の一歩に集中しろ。",
+];
+
 /* 不在時間のメッセージ（日替わり固定） */
 const MSG_AWAY = [
   "昼飯はちゃんと食え。",
@@ -738,6 +746,7 @@ const PHASE_NAMES = {
   night:     "夜更け",
   wake:      "朝 \u2500 起床",
   "wake-done": "朝 \u2500 通過済",
+  morning:   "朝",
   away:      "昼",
   "return":  "帰還",
 };
@@ -847,6 +856,13 @@ const $ = (selector) => document.querySelector(selector);
 const pick = (array) => array[Math.floor(Math.random() * array.length)];
 const pad  = (n) => String(n).padStart(2, "0");
 
+/* ユーザー入力をinnerHTMLに混ぜる際の護り */
+function escapeHtml(text) {
+  return String(text).replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
+}
+
 function currentHHMM() {
   const d = new Date();
   return pad(d.getHours()) + ":" + pad(d.getMinutes());
@@ -933,19 +949,23 @@ function getThresholds() {
   return settings.thresholds || autoThresholds(settings.wakeTarget);
 }
 
-/* 連続記録の算出 */
+/* 連続記録の算出
+   「夜」単位で数える。正午を境界にするため、23:00就寝も1:00就寝も
+   同じ夜として扱われ、同じ夜に2記録あっても二重に数えない。 */
 function getStreak(field) {
-  let count = 0;
-  const sorted = [...records].filter(r => r[field]).sort((a, b) => {
-    return new Date(b[field]) - new Date(a[field]);
-  });
-  // 日付が連続しているか確認
-  for (let i = 0; i < sorted.length; i++) {
-    const d = new Date(sorted[i][field]);
-    if (i === 0) { count = 1; continue; }
-    const prev = new Date(sorted[i - 1][field]);
-    const dayDiff = Math.round((prev - d) / 86400000);
-    if (dayDiff <= 1.5) count++;  // 1日以内の差なら連続とみなす
+  const nightNum = (iso) => {
+    const d = new Date(iso);
+    // ローカル時刻を正午基点にずらした通し日数
+    return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000 - 12 * 3600000) / 86400000);
+  };
+  const nights = [...new Set(
+    records.filter(r => r[field]).map(r => nightNum(r[field]))
+  )].sort((a, b) => b - a);
+
+  if (!nights.length) return 0;
+  let count = 1;
+  for (let i = 1; i < nights.length; i++) {
+    if (nights[i - 1] - nights[i] === 1) count++;
     else break;
   }
   return count;
@@ -974,6 +994,8 @@ function formatDate(iso) {
    セッションの状態と時刻から、表示するフェーズを決める。
    ════════════════════════════════════════════════════════════ */
 
+let bedOverride = false;  // 徹夜明け等、朝でも就寝ゲートを開く指示
+
 function detectPhase() {
   const active = getActiveSession();
   const now = new Date();
@@ -990,6 +1012,7 @@ function detectPhase() {
 
   // 不在時間帯
   if (nowMin >= awayStart && nowMin < awayEnd) {
+    bedOverride = false;
     return "away";
   }
 
@@ -1005,6 +1028,9 @@ if (nowMin >= awayEnd) {
   return "bed";
 }
 
+  // 徹夜明け等、朝でも就寝ゲートを開く指定があれば従う
+  if (bedOverride) return "bed";
+
   // 不在前（朝の時間帯）→ 最近起きたなら通過済み、さもなくば就寝ゲート
   const lastDone = getLastCompletedSession();
   if (lastDone && lastDone.wakeup) {
@@ -1012,32 +1038,51 @@ if (nowMin >= awayEnd) {
     if (hoursSince < 12) return "wake-done";
   }
 
+  // 就寝記録がないまま朝を迎えた場合（起床目標〜不在開始）
+  // ここを bed にすると深夜扱いになり、朝8時に「寝ろ」と叱ってしまう
+  if (nowMin >= toMinutes(settings.wakeTarget) && nowMin < awayStart) {
+    return "morning";
+  }
+
   return "bed";
 }
 
-/* 起床ゲートを表示するか判定（セッションの就寝時刻基準） */
-function isNearWakeTarget(session) {
-  const now = new Date();
+/* セッションの就寝時刻から見た「最初の起床目標時刻」 */
+function wakeTargetDateFor(session) {
   const bedtime = new Date(session.bedtime);
   const [wh, wm] = settings.wakeTarget.split(":").map(Number);
-
-  // 就寝後の最初の起床目標時刻を算出
   const target = new Date(bedtime);
   target.setHours(wh, wm, 0, 0);
   if (target <= bedtime) {
     target.setDate(target.getDate() + 1);
   }
-
-  // 起床ゲート開始 = 目標の wakeReadyMinutes 分前
-  const readyTime = new Date(target.getTime() - settings.wakeReadyMinutes * 60000);
-  return now >= readyTime;
+  return target;
 }
 
-/* 夜更けフェーズ内で「夜明け前」かどうか */
+/* 起床ゲートを表示するか判定（セッションの就寝時刻基準） */
+function isNearWakeTarget(session) {
+  const target = wakeTargetDateFor(session);
+  // 起床ゲート開始 = 目標の wakeReadyMinutes 分前
+  const readyTime = new Date(target.getTime() - settings.wakeReadyMinutes * 60000);
+  return new Date() >= readyTime;
+}
+
+/* HH:MM 指定から起床時刻ISOを組み立てる（就寝後・現在以前に収める） */
+function wakeISOFromHHMM(session, hhmm) {
+  const bedtime = new Date(session.bedtime);
+  const [h, m] = hhmm.split(":").map(Number);
+  const t = new Date(bedtime);
+  t.setHours(h, m, 0, 0);
+  if (t <= bedtime) t.setDate(t.getDate() + 1);
+  const now = new Date();
+  return (t > now ? now : t).toISOString();
+}
+
+/* 夜更けフェーズ内で「夜明け前」かどうか（3時以降、または目標2時間前から） */
 function isPredawn() {
   const h = new Date().getHours();
   const [wh] = settings.wakeTarget.split(":").map(Number);
-  return (h >= Math.max(0, wh - 2) && h < wh) || (h >= 3 && h < wh);
+  return h < wh && h >= Math.min(3, Math.max(0, wh - 2));
 }
 
 
@@ -1056,6 +1101,7 @@ function setBackground(phase) {
     night:     "var(--bg-night)",
     wake:      "var(--bg-wake)",
     "wake-done": "var(--bg-wake-done)",
+    morning:   "var(--bg-wake-done)",
     "away":    "var(--bg-away-light)",
     "return":  "var(--bg-return)",
   };
@@ -1146,6 +1192,7 @@ setBackground(currentPhase);
         case "night":     renderNight();    break;
         case "wake":      renderWake();     break;
         case "wake-done": renderWakeDone(); break;
+        case "morning":   renderMorning();  break;
         case "away":      renderAway();     break;
         case "return":  renderReturn();     break;
         default:          renderBed();
@@ -1174,7 +1221,7 @@ function renderBed() {
   V.innerHTML =
     '<div class="card">' +
       '<div class="clock" id="clk">' + currentHHMM() + '</div>' +
-      '<div class="sub" style="margin-top:8px">' + settings.wakeTarget + ' 起床まで ' + formatDuration(sleepMin) + '</div>' +
+      '<div class="sub" id="untilWakeSub" style="margin-top:8px">' + settings.wakeTarget + ' 起床まで ' + formatDuration(sleepMin) + '</div>' +
       (streakCount >= 2 ? '<div class="strk" style="margin-top:8px">' + pick(MSG_STREAK_BED).replace("{n}", streakCount) + '</div>' : '') +
       '<div class="accent"></div>' +
       '<div class="msg">' + message + '</div>' +
@@ -1204,6 +1251,8 @@ function renderBed() {
 
 function executeSleep() {
   if (!selectedTaskId) return;
+  const sleepBtn = $("#sleepBtn");
+  if (sleepBtn) sleepBtn.disabled = true;
 
   const taskDef = TASKS.find(t => t.id === selectedTaskId);
   const label = taskDef ? taskDef.label : "";
@@ -1212,7 +1261,14 @@ function executeSleep() {
     ? label + "：" + (otherInput.value.trim() || "")
     : label;
 
-  /* おやすみ演出 */
+  /* 記録は押した瞬間に保存する。
+     演出の後に保存すると、端末をすぐ閉じた場合（iOSはJSを停止する）に
+     記録が消えるか、後で誤った時刻で保存されてしまう。 */
+  createSession(new Date().toISOString(), fullTask, selectedTaskId);
+  bedOverride = false;
+  currentPhase = detectPhase();
+
+  /* おやすみ演出（純粋な飾り。中断されても記録は無事） */
   const overlay = document.createElement("div");
   overlay.className = "overlay";
   overlay.style.background = "rgba(4,6,10,0.96)";
@@ -1223,8 +1279,6 @@ function executeSleep() {
   document.body.appendChild(overlay);
 
   setTimeout(() => {
-    createSession(new Date().toISOString(), fullTask, selectedTaskId);
-    currentPhase = detectPhase();
     overlay.remove();
     render();
   }, 8000);
@@ -1243,7 +1297,7 @@ function renderNight() {
   const V = VIEW();
   V.innerHTML =
     '<div class="clock" style="color:var(--color-night);margin-top:80px;font-size:32px" id="clk">' + currentHHMM() + '</div>' +
-    '<div class="sub" style="color:#2a3540;margin-bottom:16px">' + settings.wakeTarget + ' \u307E\u3067 ' + formatDuration(sleepMin) + '</div>' +
+    '<div class="sub" id="untilWakeNight" style="color:#2a3540;margin-bottom:16px">' + settings.wakeTarget + ' \u307E\u3067 ' + formatDuration(sleepMin) + '</div>' +
     '<div id="nightMsg" class="night-msg" style="margin-bottom:24px">' + message + '</div>' +
     '<div class="ember"></div>' +
     '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
@@ -1313,9 +1367,19 @@ function renderNight() {
    ════════════════════════════════════════════════════════════ */
 
 function renderWake() {
+  const active = getActiveSession();
+
+  /* 起床目標を3時間超過 → 通過忘れ・寝過ごしの救済画面 */
+  if (active) {
+    const overdueMin = (new Date() - wakeTargetDateFor(active)) / 60000;
+    if (overdueMin > 180) {
+      renderWakeOverdue(active);
+      return;
+    }
+  }
+
   createLightParticles();
 
-  const active    = getActiveSession();
   const correctId = active ? active.taskId : null;
 
   const V = VIEW();
@@ -1358,7 +1422,8 @@ function renderWake() {
       if (id === correctId || !correctId) {
         btn.classList.add("on");
         $("#wakeMsg").textContent = "そうだ。──では、起きろ。";
-        $("#wakeSub").textContent = "環を長押しせよ。";
+        // 「その他」の自由記入もここで思い出させる
+        $("#wakeSub").textContent = (active && active.task ? active.task + " ── " : "") + "環を長押しせよ。";
         quizArea.classList.add("hidden");
         showHoldRing();
       } else {
@@ -1370,6 +1435,35 @@ function renderWake() {
 
     quizArea.appendChild(btn);
   });
+}
+
+/* 起床の通過忘れ・寝過ごしの救済 */
+function renderWakeOverdue(active) {
+  const V = VIEW();
+  V.innerHTML =
+    '<div class="card">' +
+      '<div class="clock" id="clk" style="font-size:36px">' + currentHHMM() + '</div>' +
+      '<div class="accent"></div>' +
+      '<div class="msg">……寝過ごしたか、通過を忘れたか。責めはせぬ。記録だけ整えよう。</div>' +
+      '<div class="sub" style="margin:8px 0">起きた時刻を入れよ（' + formatTime(active.bedtime) + ' 就寝）</div>' +
+      '<input type="time" class="s-in" id="lateWakeTime" value="' + settings.wakeTarget + '" style="width:110px;margin:8px 0">' +
+      '<div style="display:flex;gap:10px;align-items:center;margin-top:12px">' +
+        '<button class="sm-btn" id="lateWakeBtn">この時刻で通過</button>' +
+        '<button class="xs-btn" id="lateCancelBtn">就寝を取消</button>' +
+      '</div>' +
+    '</div>';
+
+  $("#lateWakeBtn").onclick = () => {
+    const hhmm = $("#lateWakeTime").value || settings.wakeTarget;
+    completeSession(active.id, wakeISOFromHHMM(active, hhmm));
+    currentPhase = detectPhase();
+    render();
+  };
+  $("#lateCancelBtn").onclick = () => {
+    cancelActiveSession();
+    currentPhase = detectPhase();
+    render();
+  };
 }
 
 function showHoldRing() {
@@ -1432,6 +1526,7 @@ function showHoldRing() {
       "rgb(" + brightness + "," + (brightness - 20) + "," + (brightness - 40) + ")";
 
     if (progress >= 1) {
+      cleanupHold();  // documentに張ったリスナーを回収してから通過
       executeWakeup();
       return;
     }
@@ -1458,6 +1553,12 @@ function showHoldRing() {
       };
       revert();
     }
+  }
+
+  function cleanupHold() {
+    document.removeEventListener("mouseup", stopHold);
+    document.removeEventListener("touchend", stopHold);
+    document.removeEventListener("touchcancel", stopHold);
   }
 
   holdArea.addEventListener("mousedown", startHold);
@@ -1531,8 +1632,43 @@ function renderWakeDone() {
       '<div class="accent"></div>' +
       '<div class="msg" style="padding:0">' + wakeMsg + '</div>' +
       (reminderMsg ? '<div class="task-lbl" style="margin-top:12px">' + reminderMsg + '</div>' : '') +
+      (session.task ? '<div class="task-val">' + escapeHtml(session.task) + '</div>' : '') +
       (taskWakeMsg ? '<div class="task-msg" style="margin-top:6px">' + taskWakeMsg + '</div>' : '') +
     '</div>';
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   10.5 朝（就寝記録なし）
+   ──────────────────────────────────────────────────────────
+   就寝ゲートを通らずに朝を迎えた場合。叱らず、今日に向かわせる。
+   ════════════════════════════════════════════════════════════ */
+
+function renderMorning() {
+  const th      = getThresholds();
+  const today   = new Date().toISOString().slice(0, 10);
+  const message = seededPick(MSG_MORNING, today);
+
+  const V = VIEW();
+  V.innerHTML =
+    '<div class="card">' +
+      '<div class="clock" id="clk">' + currentHHMM() + '</div>' +
+      '<div class="sub" style="margin-top:8px">昨夜の就寝記録はない</div>' +
+      '<div class="accent"></div>' +
+      '<div class="msg">' + message + '</div>' +
+      '<div class="accent"></div>' +
+      '<div style="display:flex;gap:24px;justify-content:center;margin:12px 0">' +
+        '<div class="stat"><div class="stat-v">' + th.normal + '</div><div class="stat-l">今夜の就寝目標</div></div>' +
+        '<div class="stat"><div class="stat-v">' + settings.wakeTarget + '</div><div class="stat-l">明朝の起床目標</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<button class="xs-btn" id="lateSleepBtn">今から眠る（徹夜明け等）</button>';
+
+  $("#lateSleepBtn").onclick = () => {
+    bedOverride = true;
+    currentPhase = "bed";
+    render();
+  };
 }
 
 
@@ -1623,28 +1759,6 @@ function getReturnMessage() {
   return returnMsgCache.msg;
 }
 
-
-function getReturnIMG() {
-  const sub = getReturnSubPhase();
-  // 初回表示は greet から始める（不在から戻った直後）
-  if (returnMsgCache.subPhase === null) {
-    returnMsgCache.subPhase = "greet";
-    returnMsgCache.msg = pick(MSG_RETURN.greet);
-    // greet でない時間帯なら、次の tick で切り替わる
-    if (sub !== "greet") {
-      returnMsgCache.subPhase = sub;
-      returnMsgCache.msg = pick(MSG_RETURN[sub]);
-    }
-    return returnMsgCache.msg;
-  }
-  // 時間帯が変わったらメッセージ更新
-  if (sub !== returnMsgCache.subPhase) {
-    returnMsgCache.subPhase = sub;
-    returnMsgCache.msg = pick(MSG_RETURN[sub]);
-  }
-  return returnMsgCache.msg;
-}
-
 const RETURN_IMAGES = {
   greet:  "img/return-greet.png",
   evening: "img/return-evening.png",
@@ -1681,7 +1795,7 @@ function renderReturn() {
           '<div class="stat-l">起床目標</div>' +
         '</div>' +
       '</div>' +
-      '<div class="sub" style="margin-top:4px">就寝まで ' + formatDuration(untilBed) + '</div>' +
+      '<div class="sub" id="untilBedSub" style="margin-top:4px">就寝まで ' + formatDuration(untilBed) + '</div>' +
     '</div>';
 }
 
@@ -1867,10 +1981,22 @@ function renderSettings() {
 
 let currentReturnSub = null;  // 帰還サブフェーズの追跡用
 
-setInterval(() => {
+function refreshTick() {
   // 時計の更新
   const clockEl = $("#clk");
   if (clockEl) clockEl.textContent = currentHHMM();
+
+  // 残り時間表示の更新（時計と同様、開きっぱなしでも古くならないように）
+  const untilWake = $("#untilWakeSub");
+  if (untilWake) untilWake.textContent = settings.wakeTarget + " 起床まで " + formatDuration(minutesUntil(settings.wakeTarget));
+  const untilNight = $("#untilWakeNight");
+  if (untilNight) untilNight.textContent = settings.wakeTarget + " まで " + formatDuration(minutesUntil(settings.wakeTarget));
+  const untilBedEl = $("#untilBedSub");
+  if (untilBedEl) {
+    const bedTargetMin = toMinutes(getThresholds().normal);
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    untilBedEl.textContent = "就寝まで " + formatDuration(((bedTargetMin - nowMin) + 1440) % 1440);
+  }
 
   // フェーズの自動遷移
   if (currentView === "gate") {
@@ -1891,7 +2017,15 @@ setInterval(() => {
       }
     }
   }
-}, 30000);
+}
+
+setInterval(refreshTick, 30000);
+
+/* バックグラウンドから戻った時、30秒待たずに即座に画面を追い付かせる
+   （iOSはバックグラウンド中タイマーを止めるため、これがないと古い画面が残る） */
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshTick();
+});
 
 /* 初期化 */
 records  = loadRecords();
