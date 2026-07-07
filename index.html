@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>関門 — Gate</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0a0e18">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -74,6 +74,12 @@
   --chip-on-border: var(--color-warm);
   --chip-on-bg:     rgba(176, 160, 96, 0.08);
   --chip-on-text:   #d4c080;
+
+  /* 種火（熾火）の色 */
+  --tanebi-aura: rgba(255,150,60,0.20);
+  --tanebi-glow: rgba(255,190,110,0.55);
+  --tanebi-core: #ff9c3d;
+  --tanebi-deep: #a34c0d;
 }
 
 /* ════════════════════════════
@@ -253,6 +259,7 @@ overflow: hidden;
   line-height: 1.8;
   color: var(--color-warm);
   text-align: center;
+  text-wrap: balance;
   max-width: 320px;
   padding: 0;
   min-height: 3.6em;
@@ -281,7 +288,8 @@ overflow: hidden;
   line-height: 2.2;
   color: var(--color-night);
   text-align: center;
-  max-width: 280px;
+  text-wrap: balance;
+  max-width: 340px;
   min-height: 3.2em;
   display: flex;
   align-items: center;
@@ -413,40 +421,116 @@ margin:10px;
 
 /* 触れずにいると文字は夜に沈み、星と種火だけが残る */
 .n-dim { transition: opacity 5s ease; }
-#nightUI.ui-dimmed .n-dim { opacity: 0.08; }
+#nightUI.ui-dimmed .n-dim { opacity: 0; }
 
 .ember-wrap {
-  position: relative; width: 130px; height: 130px;
-  display: flex; align-items: center; justify-content: center;
+  position: relative; width: 130px; height: 120px;
+  display: flex; align-items: flex-end; justify-content: center;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   margin-top: 6px;
+  padding-bottom: 14px;
 }
-.ember-glow {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(circle, rgba(232,160,70,0.14) 0%, rgba(200,120,50,0.05) 45%, transparent 70%);
-  animation: emberGlow 5.2s ease-in-out infinite;
+
+/* ── 種火（熾火）三層構造：外気・暈・芯 ──
+   別アプリからの移植。fixed→relative、opacity常時1、
+   基準の大きさは --tb-grow（会話中はJSが少し育てる） 
+   douse・warm・burst・shrinkは移植済みだが未接続。就寝取消で火がふっと消える、などいずれ使い道があろう。 */
+.tanebi {
+  position: relative; z-index: 1;
+  width: 46px; height: 50px;
+  transition: transform 0.8s ease;
+  pointer-events: none;
+  transform: scale(var(--tb-grow, 1.5));
+  transform-origin: bottom center;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
-.ember-lit {
-  position: absolute; inset: -20px; border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,190,110,0.2) 0%, rgba(220,130,60,0.07) 45%, transparent 72%);
-  opacity: 0;
-  transition: opacity 7s ease;   /* 静まる時はゆっくり */
+/* 灯る瞬間のひと膨らみ ── 蝋燭にぽっと火が点る感じ */
+.tanebi.relighting .tb-core { animation: tb-relight 0.6s ease; }
+@keyframes tb-relight {
+  0%   { transform: translate(-50%, 0) scale(0.6); }
+  40%  { transform: translate(-50%, -2px) scale(1.3); }
+  100% { transform: translate(-50%, 0) scale(1); }
 }
-.ember-wrap.lit .ember-lit { opacity: 1; transition: opacity 1.8s ease; }  /* 起きる時は早く */
-.ember-core {
-  position: relative; width: 9px; height: 9px; border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, #ffd9a0, #e8a04a 55%, #a05020 100%);
-  box-shadow: 0 0 8px rgba(255,180,90,0.7), 0 0 22px rgba(232,140,60,0.4), 0 0 44px rgba(200,100,40,0.22);
-  animation: emberBreath 4.6s ease-in-out infinite;
+/* 消える瞬間：芯がしぼんでから、ふっと消える */
+.tanebi.dousing .tb-core { animation: tb-douse 0.45s ease forwards; }
+.tanebi.dousing .tb-mid  { animation: tb-douse-mid 0.45s ease forwards; }
+.tanebi.dousing .tb-outer { animation: tb-douse-out 0.45s ease forwards; }
+@keyframes tb-douse {
+  0%   { transform: translate(-50%, 0) scale(1); }
+  60%  { transform: translate(-50%, 1px) scale(0.4); }
+  100% { transform: translate(-50%, 2px) scale(0); }
 }
-.ember-spark {
-  position: absolute; bottom: 62px; left: 50%;
-  width: 2px; height: 2px; border-radius: 50%;
-  background: rgba(255,200,120,0.8);
-  opacity: 0;
-  animation: sparkRise var(--dur) ease-out infinite;
-  animation-delay: var(--del);
+@keyframes tb-douse-mid {
+  0%   { transform: translateX(-50%) scale(1); opacity: 0.6; }
+  100% { transform: translateX(-50%) scale(0.3); opacity: 0; }
+}
+@keyframes tb-douse-out {
+  0%   { transform: translateX(-50%) scale(1); opacity: 1; }
+  100% { transform: translateX(-50%) scale(0.5); opacity: 0; }
+}
+.tb-layer { position: absolute; left: 50%; border-radius: 50%; transform: translateX(-50%); }
+.tb-outer {
+  bottom: 4px; width: 32px; height: 32px;
+  background: radial-gradient(circle, var(--tanebi-aura) 0%, rgba(255,255,255,0.02) 55%, transparent 72%);
+  animation: tb-breathe 4s ease-in-out infinite;
+  transition: background 0.5s;
+}
+.tb-mid {
+  bottom: 9px; width: 14px; height: 14px; filter: blur(3px);
+  background: radial-gradient(circle, var(--tanebi-glow) 0%, var(--tanebi-aura) 60%, transparent 100%);
+  animation: tb-pulse 3s ease-in-out infinite;
+  transition: background 0.5s;
+}
+.tb-core {
+  bottom: 12px; width: 5px; height: 9px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; filter: blur(0.6px);
+  background: radial-gradient(ellipse at 50% 60%, #fff3dc 0%, #ffd9a0 30%, var(--tanebi-core) 60%, var(--tanebi-deep) 85%, transparent 100%);
+  animation: tb-core 2.5s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--tanebi-glow), 0 0 18px var(--tanebi-aura);
+  transition: background 0.5s, box-shadow 0.5s;
+}
+/* 火の粉（時折立ち昇る）── このDOMでは4〜6番目の子 */
+.tb-spark { position: absolute; left: 50%; bottom: 14px; width: 2px; height: 2px; border-radius: 50%; background: radial-gradient(circle, #ffd39b, #ff9c3d 70%, transparent 71%); opacity: 0; animation: tb-spark-rise 6s ease-out infinite; }
+.tb-spark:nth-child(4) { animation-delay: 0s;   --dx: 8px; }
+.tb-spark:nth-child(5) { animation-delay: 2.4s; --dx: -10px; }
+.tb-spark:nth-child(6) { animation-delay: 4.2s; --dx: 6px; }
+@keyframes tb-spark-rise { 0%{opacity:0;transform:translate(-50%,0) scale(0.6)} 12%{opacity:0.7} 100%{opacity:0;transform:translate(calc(-50% + var(--dx,8px)),-36px) scale(0.2)} }
+@keyframes tb-breathe { 0%,100%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.08)} }
+@keyframes tb-pulse { 0%,100%{transform:translateX(-50%) scale(1);opacity:0.55} 50%{transform:translateX(-50%) scale(1.15);opacity:0.78} }
+@keyframes tb-core { 0%,100%{transform:translate(-50%,0) scale(1) scaleX(1)} 33%{transform:translate(-50%,-1px) scale(1.08) scaleX(0.92)} 66%{transform:translate(-50%,0.5px) scale(0.95) scaleX(1.06)} }
+/* 種火の反応（応える・揺れる・縮む・眠る） */
+.tanebi.answer .tb-core { animation: tb-answer 0.5s ease; }
+.tanebi.answer .tb-mid { animation: tb-answer-mid 0.5s ease; }
+@keyframes tb-answer { 0%{transform:translate(-50%,0) scale(1)} 35%{transform:translate(-50%,-4px) scale(1.7)} 100%{transform:translate(-50%,0) scale(1)} }
+@keyframes tb-answer-mid { 0%,100%{transform:translateX(-50%) scale(1);opacity:0.6} 40%{transform:translateX(-50%) scale(1.5);opacity:0.95} }
+.tanebi.spark-burst .tb-core { animation: tb-burst 0.4s ease; }
+@keyframes tb-burst { 0%{transform:translate(-50%,0) scale(1)} 40%{transform:translate(-50%,-3px) scale(1.5)} 100%{transform:translate(-50%,0) scale(1)} }
+.tanebi.shrink .tb-core { animation: tb-shrink 0.45s ease; }
+@keyframes tb-shrink { 0%{transform:translate(-50%,0) scale(1)} 45%{transform:translate(-50%,0) scale(0.35)} 100%{transform:translate(-50%,0) scale(1)} }
+.tanebi.sleeping .tb-core { animation: tb-sleep 3s ease-in-out infinite; }
+.tanebi.sleeping .tb-mid { animation: tb-pulse 5s ease-in-out infinite; }
+@keyframes tb-sleep { 0%,100%{opacity:0.45} 50%{opacity:1} }
+/* 手をかざした時：ぽっと膨らみ、しばらく温かい */
+.tanebi.warm .tb-core  { animation: tb-warm 2.2s ease; }
+.tanebi.warm .tb-mid   { animation: tb-warm-mid 2.2s ease; }
+.tanebi.warm .tb-outer { animation: tb-warm-out 2.2s ease; }
+@keyframes tb-warm {
+  0%   { transform: translate(-50%, 0) scale(1); }
+  25%  { transform: translate(-50%, -2px) scale(1.45); }
+  75%  { transform: translate(-50%, -2px) scale(1.35); }
+  100% { transform: translate(-50%, 0) scale(1); }
+}
+@keyframes tb-warm-mid {
+  0%,100% { transform: translateX(-50%) scale(1); opacity: 0.55; }
+  30%     { transform: translateX(-50%) scale(1.6); opacity: 0.95; }
+  70%     { transform: translateX(-50%) scale(1.5); opacity: 0.9; }
+}
+@keyframes tb-warm-out {
+  0%,100% { transform: translateX(-50%) scale(1); }
+  40%     { transform: translateX(-50%) scale(1.35); }
 }
 
 /* 天の川と流れ星 */
@@ -462,22 +546,6 @@ margin:10px;
   animation-delay: var(--del);
 }
 
-@keyframes emberBreath {
-  0%,100% { transform: scale(1);    filter: brightness(1); }
-  28%     { transform: scale(1.18); filter: brightness(1.28); }
-  52%     { transform: scale(0.94); filter: brightness(0.88); }
-  74%     { transform: scale(1.08); filter: brightness(1.12); }
-}
-@keyframes emberGlow {
-  0%,100% { opacity: 0.75; transform: scale(1); }
-  50%     { opacity: 1;    transform: scale(1.1); }
-}
-@keyframes sparkRise {
-  0%   { opacity: 0;    transform: translate(-50%, 0) scale(1); }
-  4%   { opacity: 0.85; }
-  55%  { opacity: 0.25; }
-  100% { opacity: 0;    transform: translate(calc(-50% + var(--dx)), -76px) scale(0.4); }
-}
 @keyframes shootStar {
   0%    { opacity: 0;    transform: translate(0, 0) rotate(200deg); }
   0.15% { opacity: 0.45; transform: translate(-20px, 7px) rotate(200deg); }
@@ -1192,6 +1260,15 @@ function setBackground(phase) {
     "return":  "var(--bg-return)",
   };
   $("#bg-layer").style.background = bgMap[phase] || bgMap.bed;
+
+  /* ステータスバー周りの色もフェーズに合わせる */
+  const themeMap = {
+    bed: "#0a0e18", night: "#060810", wake: "#060810",
+    "wake-done": "#1a1a2e", morning: "#1a1a2e",
+    away: "#f5ecd9", "return": "#1a1420",
+  };
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  if (themeMeta) themeMeta.setAttribute("content", themeMap[phase] || "#0a0e18");
 }
 
 /* 星空（夜更けフェーズ用） */
@@ -1414,12 +1491,14 @@ function renderNight() {
     '<div id="nightMsg" class="night-msg n-dim">' + message + '</div>' +
     '<div id="nightAction" class="night-action hidden"></div>' +
     '<div class="ember-wrap" id="emberWrap">' +
-      '<div class="ember-glow"></div>' +
-      '<div class="ember-lit"></div>' +
-      '<div class="ember-spark" style="--dur:8s;--del:2s;--dx:-9px"></div>' +
-      '<div class="ember-spark" style="--dur:11s;--del:6s;--dx:11px"></div>' +
-      '<div class="ember-spark" style="--dur:9s;--del:12s;--dx:-4px"></div>' +
-      '<div class="ember-core"></div>' +
+      '<div class="tanebi" id="tanebi">' +
+        '<div class="tb-layer tb-outer"></div>' +
+        '<div class="tb-layer tb-mid"></div>' +
+        '<div class="tb-layer tb-core"></div>' +
+        '<div class="tb-spark"></div>' +
+        '<div class="tb-spark"></div>' +
+        '<div class="tb-spark"></div>' +
+      '</div>' +
     '</div>' +
     '<div class="ember-hint n-dim">目が覚めた時は、灯に触れよ</div>' +
     '<div class="night-controls n-dim">' +
@@ -1429,6 +1508,13 @@ function renderNight() {
     '</div>';
 
   createStars();
+
+  /* 夜に入る時、蝋燭にぽっと火が点る */
+  const tanebiEl = $("#tanebi");
+  if (tanebiEl) {
+    tanebiEl.classList.add("relighting");
+    setTimeout(() => { const t = $("#tanebi"); if (t) t.classList.remove("relighting"); }, 700);
+  }
 
   /* 種火に触れる → 門番が起きる（中途覚醒の会話） */
   $("#emberWrap").onclick = startEmberTalk;
@@ -1484,8 +1570,8 @@ function startEmberTalk() {
   emberSeq++;
   armNightDim();
 
-  const wrap = $("#emberWrap");
-  if (wrap) wrap.classList.add("lit");
+  emberReact("answer");   // 火がぽっと応える
+  emberGrow("1.9");       // 会話の間、火は少し育つ
   const msgEl = $("#nightMsg");
   if (msgEl) msgEl.textContent = "……どうした。";
 
@@ -1505,6 +1591,7 @@ function startEmberTalk() {
       if (!opt) return;
       recordAwakening(opt.id);
       actionArea.classList.add("hidden");
+      emberReact("answer");
       const m = $("#nightMsg");
       if (m) m.textContent = pick(opt.responses);
 
@@ -1512,8 +1599,7 @@ function startEmberTalk() {
       const seq = emberSeq;
       setTimeout(() => {
         if (seq !== emberSeq || currentPhase !== "night") return;
-        const w = $("#emberWrap");
-        if (w) w.classList.remove("lit");
+        emberGrow(null);  // 火はゆっくり元の大きさへ
         const m2 = $("#nightMsg");
         if (m2) m2.textContent = "灯は任せろ。眠れ。";
       }, 24000);
@@ -1530,14 +1616,32 @@ function startEmberTalk() {
 function closeEmberTalk() {
   emberBusy = false;
   emberSeq++;  // 進行中のタイマーを無効化
-  const w = $("#emberWrap");
-  if (w) w.classList.remove("lit");
+  emberGrow(null);
   const a = $("#nightAction");
   if (a) { a.classList.add("hidden"); a.innerHTML = ""; }
   const m = $("#nightMsg");
   if (m && currentPhase === "night") {
     m.textContent = pick(isPredawn() ? MSG_NIGHT.predawn : MSG_NIGHT.deep);
   }
+}
+
+/* 種火の仕草（answer=応える 等、CSSの反応クラスを一度だけ再生） */
+function emberReact(name) {
+  const t = $("#tanebi");
+  if (!t) return;
+  t.classList.remove("sleeping");
+  t.classList.remove(name);
+  void t.offsetWidth;  // 同じ仕草を再生し直すための再計算
+  t.classList.add(name);
+  setTimeout(() => { const el = $("#tanebi"); if (el) el.classList.remove(name); }, 700);
+}
+
+/* 種火の大きさ（会話中は少し育つ。null で元に戻す） */
+function emberGrow(scale) {
+  const t = $("#tanebi");
+  if (!t) return;
+  if (scale) t.style.setProperty("--tb-grow", scale);
+  else t.style.removeProperty("--tb-grow");
 }
 
 /* 中途覚醒をセッションに記録する（回数と時刻が翌朝わかる） */
@@ -1554,10 +1658,16 @@ function armNightDim() {
   const ui = $("#nightUI");
   if (!ui) return;
   ui.classList.remove("ui-dimmed");
+  const t0 = $("#tanebi");
+  if (t0) t0.classList.remove("sleeping");
   clearTimeout(nightDimTimer);
   nightDimTimer = setTimeout(() => {
     const el = $("#nightUI");
-    if (el && currentPhase === "night" && !emberBusy) el.classList.add("ui-dimmed");
+    if (el && currentPhase === "night" && !emberBusy) {
+      el.classList.add("ui-dimmed");
+      const t = $("#tanebi");
+      if (t) t.classList.add("sleeping");  // 文字が沈む時、火も寝息になる
+    }
   }, 45000);
 }
 
