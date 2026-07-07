@@ -86,17 +86,21 @@
    リセット・ベース
    ════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
+html {
   margin: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;             /* 頁そのものはスクロールさせない */
+  overflow: hidden;             /* 頁そのものはスクロールさせない（根に指定すれば足りる） */
   overscroll-behavior: none;
+  /* 根の背景はセーフエリアの外まで必ず塗られる。色はJSがフェーズごとに追随させる */
   background-color: var(--color-safe-bg);
+  transition: background-color 2s ease;
 }
 body {
-  position: fixed;              /* iOSのゴム引きスクロール封じ */
-  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  /* overflowはここに指定しない：指定すると装飾レイヤーが画面下端で刈り取られる */
   color: var(--color-text);
   font-family: var(--fb);
 }
@@ -106,10 +110,10 @@ body {
    ════════════════════════════ */
 #bg-layer {
   position: fixed;
-  top:    calc(-1 * env(safe-area-inset-top, 0px));
-  left:   0;
+  top:    -80px;   /* env()は単体起動時に0を返すことがあるため、 */
+  left:   0;       /* 定数で問答無用に上下へはみ出させる */
   right:  0;
-  bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+  bottom: -80px;
   z-index: 0;
   background: var(--bg-bed);
   transition: background 2s ease;
@@ -121,8 +125,7 @@ body {
 .app {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;               /* 画面ぴったり。溢れは内側で処理する */
+  height: 100%;                 /* vh/dvhは単体起動時に癖があるため%で通す */
   overflow: hidden;
   padding-top: env(safe-area-inset-top);
   position: relative;
@@ -1265,6 +1268,16 @@ function setBackground(phase) {
     "return":  "var(--bg-return)",
   };
   $("#bg-layer").style.background = bgMap[phase] || bgMap.bed;
+
+  /* 最後の砦：根（html）の背景色をフェーズの下端色に合わせる。
+     根の背景はセーフエリアの外まで必ず塗られるため、
+     万一どの層も届かぬ帯が出ても、同系色に沈んで見えなくなる */
+  const edgeMap = {
+    bed: "#141e30", night: "#10162a", wake: "#10162a",
+    "wake-done": "#0f3460", morning: "#0f3460",
+    away: "#ebe0c8", "return": "#0e1428",
+  };
+  document.documentElement.style.backgroundColor = edgeMap[phase] || "#141e30";
 
   /* ステータスバー周りの色もフェーズに合わせる */
   const themeMap = {
