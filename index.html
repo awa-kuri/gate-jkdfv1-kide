@@ -89,13 +89,14 @@
 html, body {
   margin: 0;
   width: 100%;
-  min-height: 100%;
-  overflow-x: hidden;
+  height: 100%;
+  overflow: hidden;             /* 頁そのものはスクロールさせない */
   overscroll-behavior: none;
   background-color: var(--color-safe-bg);
 }
 body {
-  min-height: 100dvh;
+  position: fixed;              /* iOSのゴム引きスクロール封じ */
+  inset: 0;
   color: var(--color-text);
   font-family: var(--fb);
 }
@@ -120,9 +121,10 @@ body {
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;               /* 画面ぴったり。溢れは内側で処理する */
+  overflow: hidden;
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
   position: relative;
   z-index: 1;
   box-sizing: border-box;
@@ -178,6 +180,10 @@ body {
 /* メインコンテンツ領域 */
 .main {
   flex: 1;
+  min-height: 0;                          /* 内部スクロールの成立に必要 */
+  overflow-y: auto;                       /* 長い画面（記録・設定）はここだけ流れる */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -405,8 +411,7 @@ margin:10px;
    ════════════════════════════ */
 #nightUI {
   display: flex; flex-direction: column; align-items: center;
-  width: 100%; flex: 1;
-  min-height: calc(100dvh - 220px);
+  width: 100%; flex: 1;   /* 決め打ちせず、残り空間いっぱいに伸びる */
 }
 .night-clock { font-size: 30px; color: var(--color-night); margin-top: 44px; }
 .night-sub { color: #2a3540; margin-top: 6px; }
